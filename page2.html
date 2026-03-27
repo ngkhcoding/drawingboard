@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>頁面2 - 多人畫作展示大廳</title>
+    <style>
+        body { background-color: #d4edda; margin: 0; overflow: hidden; }
+        .header { text-align: center; padding: 20px; font-family: sans-serif; color: #155724; position: relative; z-index: 10; }
+        .movingImage {
+            position: absolute;
+            width: 150px; 
+            height: 150px;
+            border: 2px dashed #666;
+            border-radius: 10px;
+            background-color: white; 
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>大家的畫作都在這裡走來走去！</h2>
+        <p>請用其他手機或電腦打開頁面1來作畫</p>
+    </div>
+
+    <script type="module">
+        // 載入 Firebase 核心與資料庫模組
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        // 你的專屬 Firebase 設定
+        const firebaseConfig = {
+            apiKey: "AIzaSyCxceo3lq2CNXtYBUQBsoc00NO800o1Xk4",
+            authDomain: "project-7577690681598110536.firebaseapp.com",
+            databaseURL: "https://project-7577690681598110536-default-rtdb.firebaseio.com",
+            projectId: "project-7577690681598110536",
+            storageBucket: "project-7577690681598110536.firebasestorage.app",
+            messagingSenderId: "239454542830",
+            appId: "1:239454542830:web:56f1fb2646d1f8b9eb4cff",
+            measurementId: "G-LCFZK9RY8Z"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const artworks = [];
+
+        // 監聽 Firebase 資料庫，有新畫作就抓下來
+        const drawingsRef = ref(db, 'drawings');
+        onChildAdded(drawingsRef, (snapshot) => {
+            const imageData = snapshot.val();
+            
+            const imgEl = document.createElement('img');
+            imgEl.src = imageData;
+            imgEl.className = 'movingImage';
+            document.body.appendChild(imgEl);
+
+            // 設定隨機位置與速度
+            const artData = {
+                element: imgEl,
+                x: Math.random() * (window.innerWidth - 150),
+                y: Math.random() * (window.innerHeight - 150),
+                dx: (Math.random() * 4 + 1) * (Math.random() > 0.5 ? 1 : -1),
+                dy: (Math.random() * 4 + 1) * (Math.random() > 0.5 ? 1 : -1)
+            };
+            artworks.push(artData);
+        });
+
+        // 動畫管理函數
+        function animate() {
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+
+            artworks.forEach((art) => {
+                if (art.x + 150 >= windowWidth || art.x <= 0) {
+                    art.dx = -art.dx;
+                }
+                if (art.y + 150 >= windowHeight || art.y <= 0) {
+                    art.dy = -art.dy;
+                }
+
+                art.x += art.dx;
+                art.y += art.dy;
+
+                art.element.style.left = art.x + 'px';
+                art.element.style.top = art.y + 'px';
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
