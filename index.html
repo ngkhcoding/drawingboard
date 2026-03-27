@@ -103,6 +103,16 @@
                 </button>
             </div>
             
+            <!-- AI 角色分析說明 -->
+            <div class="w-full bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-4 text-left shadow-sm">
+                <h3 class="text-indigo-800 font-bold text-sm mb-1 flex items-center gap-1">
+                    <span>✨</span> AI 角色分析
+                </h3>
+                <p class="text-indigo-600/80 text-xs leading-relaxed font-semibold">
+                    當您按下「傳送」時，系統會將畫作發送給 AI 辨識您的塗鴉，並為它命名、賦予性格，甚至寫下一句專屬對話。
+                </p>
+            </div>
+
             <!-- 傳送按鈕 (漸層大按鈕) -->
             <button id="sendBtn" class="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white py-4 rounded-xl font-black text-lg shadow-lg shadow-purple-200 transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-2">
                 ✨ 賦予靈魂並傳送 ✨
@@ -210,9 +220,9 @@
         const db = getDatabase(app);
         const drawingsRef = ref(db, 'drawings');
 
-        // Gemini API 設定 (執行環境自動帶入 Key)
-        const apiKey = ""; 
-        const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+        // ⚠️ 請在此填入你的智譜 AI API Key
+        const apiKey = "e2bf1f2b563e43789f2ef97c3fc51f65.R0QpxNoSojQSMVGT"; 
+        const GLM_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 
         // 全域狀態
         let currentMode = 'draw'; // 'draw' 或 'zoo'
@@ -334,17 +344,26 @@
         }
 
         async function analyzeImageWithAI(base64Image) {
-            const pureBase64 = base64Image.split(',')[1];
-            
-            // 依照最新的 API 格式建構 Payload
+            // GLM-4V 需要完整的 base64 URL (包含 data:image/png;base64, 前綴)
             const payload = {
-                contents: [{
-                    role: "user",
-                    parts: [
-                        { text: "這是一張簡單的線條塗鴉。請發揮創意辨識它像什麼，並為這個角色賦予靈魂。回傳純 JSON 格式，必須包含以下 key：'name'(有趣繁體中文名), 'personality'(一句話形容性格), 'quote'(專屬經典台詞)。不要有 Markdown 標記。" },
-                        { inlineData: { mimeType: "image/png", data: pureBase64 } }
-                    ]
-                }]
+                model: "glm-4v-flash", // 注意：必須使用帶有 'v' 的視覺模型才能辨識圖片
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "這是一張簡單的線條塗鴉。請發揮創意辨識它像什麼，並為這個角色賦予靈魂。回傳純 JSON 格式，必須包含以下 key：'name'(有趣繁體中文名), 'personality'(一句話形容性格), 'quote'(專屬經典台詞)。不要有 Markdown 標記。"
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: base64Image
+                                }
+                            }
+                        ]
+                    }
+                ]
             };
 
             setOverlayStatus("AI 正在觀察...", "思考這優美的線條代表什麼生命體");
@@ -355,9 +374,12 @@
             
             while (retries > 0) {
                 try {
-                    const response = await fetch(GEMINI_API_URL, {
+                    const response = await fetch(GLM_API_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}` // 智譜 API 使用 Bearer Token 驗證
+                        },
                         body: JSON.stringify(payload)
                     });
 
@@ -365,7 +387,8 @@
                     
                     const data = await response.json();
                     
-                    let aiTextResponse = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                    // GLM 的回應格式提取
+                    let aiTextResponse = data.choices?.[0]?.message?.content;
                     if(!aiTextResponse) throw new Error("AI 回應格式錯誤");
 
                     // 嘗試清理可能存在的 Markdown JSON 標記
