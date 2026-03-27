@@ -2,26 +2,83 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>頁面1 - 多人繪圖上傳</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>頁面1 - 進階繪圖板</title>
     <style>
-        body { background-color: #ffffff; display: flex; flex-direction: column; align-items: center; font-family: sans-serif; margin-top: 50px; }
-        canvas { border: 2px solid #333; cursor: crosshair; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        button { margin-top: 20px; padding: 10px 20px; font-size: 18px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
+        body { 
+            background-color: #ffffff; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            font-family: sans-serif; 
+            margin: 0;
+            padding: 20px;
+            /* 防止手機上滑動頁面導致繪圖中斷 */
+            overflow: hidden; 
+            overscroll-behavior: none;
+        }
+        h2 { margin-top: 0; font-size: 1.2rem; }
+        
+        /* 畫布容器：用來控制 RWD 寬度 */
+        .canvas-container {
+            width: 100%;
+            max-width: 400px; /* 電腦上最大 400px */
+            aspect-ratio: 1 / 1; /* 保持正方形 */
+        }
+        
+        canvas { 
+            border: 2px solid #333; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); 
+            background-color: transparent; /* 畫布本身設為透明 */
+            width: 100%; /* 填滿容器 */
+            height: 100%;
+            display: block;
+            /* 重要：防止手機觸控時出現預設的藍色框或系統滑動行為 */
+            touch-action: none; 
+            cursor: crosshair;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button { 
+            padding: 10px 15px; 
+            font-size: 1rem; 
+            color: white; border: none; border-radius: 5px; cursor: pointer; 
+            transition: background 0.2s;
+        }
+        #undoBtn { background-color: #6c757d; } /* 灰色 */
+        #resetBtn { background-color: #dc3545; } /* 紅色 */
+        #sendBtn { background-color: #007BFF; width: 100%; max-width: 400px; margin-top: 10px; font-weight: bold;} /* 藍色 */
+        
+        button:hover { opacity: 0.8; }
+        button:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
-    <h2>請在下方畫畫，完成後按「傳送到大螢幕」</h2>
-    <canvas id="drawCanvas" width="400" height="400"></canvas>
-    <button id="sendBtn">傳送到大螢幕</button>
+    <h2>請繪圖，將會即時傳送到大螢幕</h2>
+    
+    <div class="canvas-container">
+        <canvas id="drawCanvas" width="400" height="400"></canvas>
+    </div>
+    
+    <div class="controls">
+        <button id="undoBtn">⬅️ 復原上一筆</button>
+        <button id="resetBtn">🗑️ 全部重置</button>
+    </div>
+    
+    <button id="sendBtn">傳送到大螢幕 🚀</button>
 
     <script type="module">
-        // 載入 Firebase 核心與資料庫模組 (對應你的 12.11.0 版本)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
         import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
-        // 你的專屬 Firebase 設定
+        // 使用你提供的專屬 Firebase 設定
         const firebaseConfig = {
             apiKey: "AIzaSyCxceo3lq2CNXtYBUQBsoc00NO800o1Xk4",
             authDomain: "project-7577690681598110536.firebaseapp.com",
@@ -33,38 +90,146 @@
             measurementId: "G-LCFZK9RY8Z"
         };
 
-        // 初始化 Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        // 畫布邏輯
         const canvas = document.getElementById('drawCanvas');
         const ctx = canvas.getContext('2d');
+        
+        // --- 繪圖設定 ---
+        ctx.lineWidth = 6; 
+        ctx.lineCap = 'round'; 
+        ctx.lineJoin = 'round'; /* 讓線條轉折更平滑 */
+        ctx.strokeStyle = 'black';
+        
+        // --- 核心變數 ---
         let isDrawing = false;
         
-        ctx.fillStyle = "white"; 
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.lineWidth = 5; 
-        ctx.lineCap = 'round'; 
-        ctx.strokeStyle = 'black';
+        // --- 技術 1：復原 (Undo) 邏輯 ---
+        // 用一個陣列來儲存畫布的歷史狀態（圖片資料）
+        let historyPushStack = [];
+        
+        // 初始化：將空白畫布存入歷史第一筆
+        saveHistory();
 
-        canvas.addEventListener('mousedown', (e) => { isDrawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); });
-        canvas.addEventListener('mousemove', (e) => { if (isDrawing) { ctx.lineTo(e.offsetX, e.offsetY); ctx.stroke(); } });
-        canvas.addEventListener('mouseup', () => { isDrawing = false; });
-        canvas.addEventListener('mouseout', () => { isDrawing = false; });
+        // 儲存當前畫布狀態的函數
+        function saveHistory() {
+            // getImageData 可以抓取目前畫布上所有的像素資料
+            historyPushStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+            // 限制紀錄步數，避免消耗太大記憶體（例如只保留最近 20 筆）
+            if (historyPushStack.length > 21) { historyPushStack.shift(); }
+        }
 
-        // 傳送到 Firebase 資料庫
+        // --- 技術 2：統一滑動/觸控座標計算 ---
+        // 因為 RWD 導致 Canvas CSS 尺寸與內部尺寸不同，需要轉換座標
+        function getCanvasCoordinates(e) {
+            const rect = canvas.getBoundingClientRect(); // 取得畫布在網頁上的實際位置與大小
+            const scaleX = canvas.width / rect.width;    // 計算比例 (內部400 / 實際寬度)
+            const scaleY = canvas.height / rect.height;
+
+            let clientX, clientY;
+            
+            // 判斷是觸控事件還是滑鼠事件
+            if (e.touches && e.touches[0]) {
+                // 手機觸控
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                // 滑鼠
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            // 返回轉換後的正確座標
+            return {
+                x: (clientX - rect.left) * scaleX,
+                y: (clientY - rect.top) * scaleY
+            };
+        }
+
+        // --- 統一繪圖邏輯 (開始、移動、結束) ---
+        function startDrawing(e) {
+            isDrawing = true;
+            const coords = getCanvasCoordinates(e);
+            ctx.beginPath();
+            ctx.moveTo(coords.x, coords.y);
+            // 防止 iOS 觸控時不移動就不顯示點的問題
+            ctx.lineTo(coords.x, coords.y); 
+            ctx.stroke();
+            // 在手機上，preventDefault 可防止觸控時網頁捲動
+            if(e.cancelable && e.type.startsWith('touch')) e.preventDefault();
+        }
+
+        function drawMoving(e) {
+            if (!isDrawing) return;
+            const coords = getCanvasCoordinates(e);
+            ctx.lineTo(coords.x, coords.y);
+            ctx.stroke();
+            if(e.cancelable && e.type.startsWith('touch')) e.preventDefault();
+        }
+
+        function stopDrawing(e) {
+            if (isDrawing) {
+                isDrawing = false;
+                ctx.closePath();
+                // 筆畫結束時，儲存當前畫布狀態到歷史紀錄
+                saveHistory();
+            }
+        }
+
+        // --- 事件監聽 (滑鼠) ---
+        canvas.addEventListener('mousedown', startDrawing);
+        window.addEventListener('mousemove', drawMoving); // window 監聽滑動，防止滑出畫布後死當
+        window.addEventListener('mouseup', stopDrawing);
+
+        // --- 技術 3：事件監聽 (手機觸控 Touch Events) ---
+        // { passive: false } 很重要，允許我們使用 preventDefault() 來取消系統捲動
+        canvas.addEventListener('touchstart', startDrawing, { passive: false });
+        canvas.addEventListener('touchmove', drawMoving, { passive: false });
+        window.addEventListener('touchend', stopDrawing);
+        window.addEventListener('touchcancel', stopDrawing); // 防止電話響起等中斷
+
+
+        // --- 按鈕功能邏輯 ---
+
+        // 1. 復原按鈕
+        document.getElementById('undoBtn').addEventListener('click', () => {
+            if (historyPushStack.length > 1) {
+                // 移除當前最新的狀態
+                historyPushStack.pop(); 
+                // 取得上一個狀態
+                const previousState = historyPushStack[historyPushStack.length - 1];
+                // 將上一個狀態畫回畫布上
+                ctx.putImageData(previousState, 0, 0);
+            } else {
+                alert("不能再復原囉！");
+            }
+        });
+
+        // 2. 全部重置按鈕
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            // 清空畫布 (變為透明)
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 清空紀錄，保留初始透明狀態
+            historyPushStack = [];
+            saveHistory(); 
+        });
+
+        // 3. 傳送到 Firebase
         document.getElementById('sendBtn').addEventListener('click', () => {
+            // 注意：因為我們畫布背景是透明的，toDataURL('image/png') 會產生透明背景的圖片
             const imageData = canvas.toDataURL('image/png');
             
-            // 將圖片資料推送到資料庫的 'drawings' 節點
+            // 檢查是否為空畫布（歷史紀錄只有 1 筆）
+            if(historyPushStack.length <= 1) {
+                alert("請先畫點東西再傳送喔！");
+                return;
+            }
+
             push(ref(db, 'drawings'), imageData).then(() => {
-                alert("傳送成功！這幅畫已經飛到大螢幕了！");
-                // 傳送後清空畫布
-                ctx.fillStyle = "white";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }).catch((error) => {
-                alert("傳送失敗：" + error);
+                alert("傳送成功！");
+                // 傳送後自動重置（選擇性）
+                document.getElementById('resetBtn').click();
             });
         });
     </script>
