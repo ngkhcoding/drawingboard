@@ -3,32 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>頁面2 - 多人畫作展示大廳</title>
+    <title>頁面2 - 透明飄動大廳</title>
     <style>
-        body { background-color: #d4edda; margin: 0; overflow: hidden; }
-        .header { text-align: center; padding: 20px; font-family: sans-serif; color: #155724; position: relative; z-index: 10; }
+        body { 
+            background-color: #d4edda; /* 淺綠色背景 */
+            margin: 0; 
+            overflow: hidden; 
+            font-family: sans-serif;
+        }
+        .header { 
+            text-align: center; padding: 20px; color: #155724; 
+            position: relative; z-index: 10; 
+            pointer-events: none; /* 讓標題不會擋到下方的圖片點擊 */
+        }
+        
+        /* 圖片樣式：不再需要邊框和白色背景 */
         .movingImage {
             position: absolute;
             width: 150px; 
             height: 150px;
-            border: 2px dashed #666;
-            border-radius: 10px;
-            background-color: white; 
+            /* background-color: white;  <- 移除這行 */
+            /* border: 2px dashed #666; <- 移除這行，享受透明效果 */
         }
+        
+        /* 技術 4：右下角重置按鈕固定位置 */
+        #globalResetBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background-color: #dc3545; /* 紅色 */
+            color: white;
+            border: none;
+            border-radius: 50px; /* 橢圓形 */
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 100; /* 確保在最上層 */
+            transition: all 0.2s;
+        }
+        #globalResetBtn:hover { background-color: #a71d2a; transform: translateY(-2px); }
+        #globalResetBtn:active { transform: translateY(1px) scale(0.98); }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2>大家的畫作都在這裡走來走去！</h2>
-        <p>請用其他手機或電腦打開頁面1來作畫</p>
+        <h2>大家的透明畫作都在飄動</h2>
     </div>
+    
+    <button id="globalResetBtn">🧹 清空大螢幕 (Remove All)</button>
 
     <script type="module">
-        // 載入 Firebase 核心與資料庫模組
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getDatabase, ref, onChildAdded } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+        // 引入 remove (刪除用) 和 onChildRemoved (監聽刪除用)
+        import { getDatabase, ref, onChildAdded, remove, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
-        // 你的專屬 Firebase 設定
         const firebaseConfig = {
             apiKey: "AIzaSyCxceo3lq2CNXtYBUQBsoc00NO800o1Xk4",
             authDomain: "project-7577690681598110536.firebaseapp.com",
@@ -43,41 +73,101 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        const artworks = [];
-
-        // 監聽 Firebase 資料庫，有新畫作就抓下來
+        // 儲存所有畫作物件的陣列
+        let artworks = [];
         const drawingsRef = ref(db, 'drawings');
-        onChildAdded(drawingsRef, (snapshot) => {
-            const imageData = snapshot.val();
-            
-            const imgEl = document.createElement('img');
-            imgEl.src = imageData;
-            imgEl.className = 'movingImage';
-            document.body.appendChild(imgEl);
 
-            // 設定隨機位置與速度
-            const artData = {
-                element: imgEl,
-                x: Math.random() * (window.innerWidth - 150),
-                y: Math.random() * (window.innerHeight - 150),
-                dx: (Math.random() * 4 + 1) * (Math.random() > 0.5 ? 1 : -1),
-                dy: (Math.random() * 4 + 1) * (Math.random() > 0.5 ? 1 : -1)
+        // --- 技術 6：畫作去底 (Color Keying) ---
+        // 這個函數接受一個 Base64 圖片，利用 Canvas 將裡面的「白色」變為透明
+        function removeWhiteBackground(base64Image, callback) {
+            const tempImg = new Image();
+            tempImg.src = base64Image;
+            
+            tempImg.onload = () => {
+                // 建立一個隱藏的臨時畫布
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = tempImg.width;
+                tempCanvas.height = tempImg.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                
+                // 先將圖片畫上去
+                tempCtx.drawImage(tempImg, 0, 0);
+                
+                // 取得所有像素資料 (R, G, B, A 陣列)
+                const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                const data = imageData.data;
+                
+                // 遍歷所有像素，每 4 個數字代表一個像素 (紅, 綠, 藍, 透明度)
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i];
+                    const g = data[i+1];
+                    const b = data[i+2];
+                    
+                    // 檢查是否為「近似白色」 (避免使用者畫淡灰色被誤刪)
+                    // 閾值設為 240 (滿分 255)
+                    const threshold = 240;
+                    if (r > threshold && g > threshold && b > threshold) {
+                        // 如果是白色，將透明度 (Alpha) 設為 0 (完全透明)
+                        data[i+3] = 0;
+                    }
+                }
+                
+                // 將修改後的像素資料放回臨時畫布
+                tempCtx.putImageData(imageData, 0, 0);
+                // 將處理好的透明圖片轉換成 Base64 回傳
+                callback(tempCanvas.toDataURL('image/png'));
             };
-            artworks.push(artData);
+        }
+
+        // 當 Firebase 有新畫作加入時
+        onChildAdded(drawingsRef, (snapshot) => {
+            const rawImageData = snapshot.val();
+            const firebaseKey = snapshot.key; // 紀錄資料在雲端的唯一身分證
+
+            // 使用去底技術
+            removeWhiteBackground(rawImageData, (transparentImageData) => {
+                const imgEl = document.createElement('img');
+                imgEl.src = transparentImageData;
+                imgEl.className = 'movingImage';
+                imgEl.id = 'img_' + firebaseKey; // 設定網頁 HTML ID，方便稍後刪除
+                document.body.appendChild(imgEl);
+
+                // --- 技術 7：減慢移動速度 ---
+                // 將 dx, dy 的隨機範圍從原本的 (1~5) 降到 (0.3~1.0)
+                const artData = {
+                    key: firebaseKey, // 儲存金鑰
+                    element: imgEl,
+                    x: Math.random() * (window.innerWidth - 150),
+                    y: Math.random() * (window.innerHeight - 150),
+                    dx: (Math.random() * 0.7 + 0.3) * (Math.random() > 0.5 ? 1 : -1),
+                    dy: (Math.random() * 0.7 + 0.3) * (Math.random() > 0.5 ? 1 : -1)
+                };
+                artworks.push(artData);
+            });
         });
 
-        // 動畫管理函數
+        // --- 技術 8：Firebase 即時同步刪除 (onChildRemoved) ---
+        // 監聽雲端，如果有人按了重置，或者資料在後台被刪除，會觸發此事件
+        onChildRemoved(drawingsRef, (snapshot) => {
+            const firebaseKey = snapshot.key;
+            
+            // 1. 從網頁 HTML DOM 中移除該圖片
+            const imgEl = document.getElementById('img_' + firebaseKey);
+            if(imgEl) { imgEl.remove(); }
+            
+            // 2. 從 JS 的動畫陣列 artworks 中移除該資料，防止程式出錯
+            artworks = artworks.filter(art => art.key !== firebaseKey);
+        });
+
+        // 動畫管理函數 (速度已變慢)
         function animate() {
             const windowWidth = window.innerWidth;
             const windowHeight = window.innerHeight;
 
             artworks.forEach((art) => {
-                if (art.x + 150 >= windowWidth || art.x <= 0) {
-                    art.dx = -art.dx;
-                }
-                if (art.y + 150 >= windowHeight || art.y <= 0) {
-                    art.dy = -art.dy;
-                }
+                // 碰到邊緣反彈
+                if (art.x + 150 >= windowWidth || art.x <= 0) { art.dx = -art.dx; }
+                if (art.y + 150 >= windowHeight || art.y <= 0) { art.dy = -art.dy; }
 
                 art.x += art.dx;
                 art.y += art.dy;
@@ -85,11 +175,25 @@
                 art.element.style.left = art.x + 'px';
                 art.element.style.top = art.y + 'px';
             });
-
             requestAnimationFrame(animate);
         }
-
         animate();
+
+        // --- 技術 9：實作全域重置按鈕邏輯 ---
+        document.getElementById('globalResetBtn').addEventListener('click', () => {
+            if(artworks.length === 0) { alert("畫面上已經沒有東西囉！"); return; }
+            
+            if(confirm("確定要清空 Firebase 雲端資料庫上所有人的畫作嗎？ (此動作不可逆)")) {
+                // 使用 remove() 直接清空 'drawings' 節點的所有資料
+                remove(drawingsRef).then(() => {
+                    alert("雲端資料已清空，大螢幕即時同步中！");
+                    // 註：我們不需要在這裡手動 remove HTML 元素，
+                    // 因為 onChildRemoved 監聽器會自動幫我們做這件事！
+                }).catch((error) => {
+                    alert("清空失敗：" + error);
+                });
+            }
+        });
     </script>
 </body>
 </html>
