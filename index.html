@@ -65,6 +65,14 @@
             0% { opacity: 0; transform: scale(0.8) translateY(20px); }
             100% { opacity: 1; transform: scale(1) translateY(0); }
         }
+
+        /* 新加入圖案的聚光燈特效 */
+        .spotlight-entity {
+            transform: scale(2.2) !important;
+            z-index: 100 !important;
+            filter: drop-shadow(0 0 30px rgba(255,255,255,0.9)) drop-shadow(0 15px 25px rgba(0,0,0,0.3)) !important;
+            transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 1.5s !important;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen w-screen overflow-hidden flex flex-col relative">
@@ -93,6 +101,20 @@
                 <canvas id="drawCanvas" width="400" height="400" class="w-full h-full cursor-crosshair"></canvas>
             </div>
             
+            <!-- 顏色選擇器 -->
+            <div class="flex gap-3 w-full mb-4 justify-center" id="colorPalette">
+                <!-- 預設黑色 -->
+                <button class="w-10 h-10 rounded-full border-[3px] border-white ring-2 ring-indigo-500 shadow-md transition-transform hover:scale-110" style="background-color: #1e293b;" data-color="#1e293b"></button>
+                <!-- 紅色 -->
+                <button class="w-10 h-10 rounded-full border-[3px] border-white ring-0 ring-transparent shadow-md transition-transform hover:scale-110" style="background-color: #ef4444;" data-color="#ef4444"></button>
+                <!-- 藍色 -->
+                <button class="w-10 h-10 rounded-full border-[3px] border-white ring-0 ring-transparent shadow-md transition-transform hover:scale-110" style="background-color: #3b82f6;" data-color="#3b82f6"></button>
+                <!-- 綠色 -->
+                <button class="w-10 h-10 rounded-full border-[3px] border-white ring-0 ring-transparent shadow-md transition-transform hover:scale-110" style="background-color: #22c55e;" data-color="#22c55e"></button>
+                <!-- 橘黃色 -->
+                <button class="w-10 h-10 rounded-full border-[3px] border-white ring-0 ring-transparent shadow-md transition-transform hover:scale-110" style="background-color: #f59e0b;" data-color="#f59e0b"></button>
+            </div>
+
             <!-- 工具按鈕 -->
             <div class="flex gap-3 w-full mb-4">
                 <button id="undoBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
@@ -229,6 +251,7 @@
         const zooRegistry = {}; 
         let artworks = []; 
         let isZooPaused = false;
+        const pageLoadTime = Date.now(); // 紀錄頁面載入時間，用來判斷是否為「新加入」的圖案
 
         // ==========================================
         // 2. UI 導覽切換邏輯
@@ -268,7 +291,25 @@
         ctx.lineWidth = 8; 
         ctx.lineCap = 'round'; 
         ctx.lineJoin = 'round';
-        ctx.strokeStyle = '#1e293b'; // 深岩灰色，比純黑更好看
+        ctx.strokeStyle = '#1e293b'; // 深岩灰色，預設顏色
+
+        // 顏色選擇邏輯
+        const colorBtns = document.querySelectorAll('#colorPalette button');
+        colorBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                // 清除所有按鈕的選取狀態
+                colorBtns.forEach(b => { 
+                    b.classList.remove('ring-2', 'ring-indigo-500'); 
+                    b.classList.add('ring-transparent'); 
+                });
+                // 設定目前選取的按鈕
+                const target = e.currentTarget;
+                target.classList.remove('ring-transparent');
+                target.classList.add('ring-2', 'ring-indigo-500');
+                // 更改畫筆顏色
+                ctx.strokeStyle = target.dataset.color;
+            });
+        });
 
         function saveHistory() {
             historyPushStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
@@ -519,14 +560,40 @@
                 
                 zooContainer.appendChild(imgEl);
 
-                // 賦予隨機位置與柔和的飄浮速度
+                // 判斷是否為新加入的圖案
+                const isNewItem = data.timestamp > pageLoadTime;
+                let startX, startY, isResting = false;
+
+                if (isNewItem) {
+                    // 新加入的圖案：放在正中間並放大
+                    startX = (window.innerWidth / 2) - 70;
+                    startY = (window.innerHeight / 2) - 70;
+                    isResting = true;
+                    imgEl.classList.add('spotlight-entity');
+                    
+                    // 8 秒後解除放大狀態並開始漂浮
+                    setTimeout(() => {
+                        const artIndex = artworks.findIndex(a => a.key === firebaseKey);
+                        if(artIndex !== -1) {
+                            artworks[artIndex].isResting = false;
+                            imgEl.classList.remove('spotlight-entity');
+                        }
+                    }, 8000);
+                } else {
+                    // 原本就存在的圖案：一開始就賦予隨機位置
+                    startX = Math.random() * (window.innerWidth - 180) + 20;
+                    startY = Math.random() * (window.innerHeight - 180) + 20;
+                }
+
+                // 賦予柔和的飄浮速度
                 const artData = {
                     key: firebaseKey,
                     element: imgEl,
-                    x: Math.random() * (window.innerWidth - 180) + 20,
-                    y: Math.random() * (window.innerHeight - 180) + 20,
+                    x: startX,
+                    y: startY,
                     dx: (Math.random() * 0.8 + 0.2) * (Math.random() > 0.5 ? 1 : -1),
-                    dy: (Math.random() * 0.8 + 0.2) * (Math.random() > 0.5 ? 1 : -1)
+                    dy: (Math.random() * 0.8 + 0.2) * (Math.random() > 0.5 ? 1 : -1),
+                    isResting: isResting
                 };
                 artworks.push(artData);
             });
@@ -553,6 +620,15 @@
                 const w = window.innerWidth;
                 const h = window.innerHeight;
                 artworks.forEach((art) => {
+                    if (art.isResting) {
+                        // 如果在聚光燈休息狀態，強制保持在畫面正中間（即使視窗縮放）
+                        art.x = (window.innerWidth / 2) - 70;
+                        art.y = (window.innerHeight / 2) - 70;
+                        art.element.style.left = art.x + 'px'; 
+                        art.element.style.top = art.y + 'px';
+                        return; // 提早返回，跳過漂浮更新
+                    }
+
                     if (art.x + 140 >= w || art.x <= 0) art.dx = -art.dx;
                     if (art.y + 140 >= h || art.y <= 0) art.dy = -art.dy;
                     art.x += art.dx; art.y += art.dy;
