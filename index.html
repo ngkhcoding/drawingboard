@@ -266,16 +266,8 @@
         const navDrawBtn = document.getElementById('navDrawBtn');
         const navZooBtn = document.getElementById('navZooBtn');
 
-        function switchMode(mode, bypassPassword = false) {
-            // 從 View 1 轉至 View 2 需輸入密碼檢查
-            if (mode === 'zoo' && currentMode === 'draw' && !bypassPassword) {
-                const pwd = prompt("請輸入密碼以進入動物園大廳：");
-                if (pwd !== '122333') {
-                    if (pwd !== null) alert("密碼錯誤！");
-                    return; // 密碼錯誤則中止切換
-                }
-            }
-
+        function switchMode(mode) {
+            // 已移除進入大廳的密碼檢查
             currentMode = mode;
             if (mode === 'draw') {
                 viewDraw.classList.remove('hidden'); viewZoo.classList.add('hidden');
@@ -495,8 +487,8 @@
                 setTimeout(() => {
                     overlay.style.display = 'none';
                     document.getElementById('resetBtn').click();
-                    // 創造成功後，自動切換到動物園模式看看牠！ (繞過密碼檢查)
-                    switchMode('zoo', true);
+                    // 創造成功後，自動切換到動物園模式看看牠！
+                    switchMode('zoo');
                 }, 2000);
 
             } catch (error) {
@@ -548,6 +540,14 @@
         // 個別刪除按鈕邏輯
         document.getElementById('deleteEntityBtn').addEventListener('click', async () => {
             if (!currentSelectedKey) return;
+            
+            // 新增：個別刪除密碼驗證
+            const pwd = prompt("請輸入密碼以刪除此圖案：");
+            if (pwd !== '122333') {
+                if (pwd !== null) alert("密碼錯誤！");
+                return;
+            }
+
             if (confirm("確定要刪除這個圖案嗎？此動作無法復原。")) {
                 try {
                     await remove(ref(db, `drawings/${currentSelectedKey}`));
@@ -673,6 +673,14 @@
         // 全域清空
         document.getElementById('globalResetBtn').addEventListener('click', () => {
             if(Object.keys(zooRegistry).length === 0) { alert("大廳目前已經是空的了喔！"); return; }
+            
+            // 新增：清空大廳密碼驗證
+            const pwd = prompt("請輸入密碼以清空大廳：");
+            if (pwd !== '122333') {
+                if (pwd !== null) alert("密碼錯誤！");
+                return;
+            }
+
             if(confirm("確定要將所有生命體放生，清空動物園嗎？")) { 
                 remove(drawingsRef); 
             }
