@@ -387,7 +387,7 @@
         async function analyzeImageWithAI(base64Image) {
             // GLM 需要完整的 base64 URL (包含 data:image/png;base64, 前綴)
             const payload = {
-                model: "glm-4.6v", // 切換為更強大的 glm-4.6v 視覺模型
+                model: "glm-4.1v-thinking-flash", // 切換為指定的 glm-4.1v-thinking-flash 思考視覺模型
                 messages: [
                     {
                         role: "user",
