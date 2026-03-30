@@ -78,12 +78,12 @@
 <body class="bg-slate-50 text-slate-800 h-screen w-screen overflow-hidden flex flex-col relative">
 
     <!-- 🌟 全域導覽列 (模式切換) -->
-    <nav class="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 glass-panel rounded-full shadow-lg p-1.5 flex gap-1 w-[90%] max-w-sm">
-        <button id="navDrawBtn" class="flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all bg-white shadow-sm text-indigo-600">
-            🎨 繪圖模式
+    <nav class="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 glass-panel rounded-full shadow-lg p-1 flex gap-1 w-[70%] max-w-[200px]">
+        <button id="navDrawBtn" class="flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all bg-white shadow-sm text-indigo-600">
+            🎨 繪圖
         </button>
-        <button id="navZooBtn" class="flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all text-slate-500 hover:text-slate-800">
-            🏞️ 動物園大廳
+        <button id="navZooBtn" class="flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all text-slate-500 hover:text-slate-800">
+            🏞️ 大廳
         </button>
     </nav>
 
@@ -178,7 +178,12 @@
             <!-- 卡片頂部裝飾背景 -->
             <div class="h-32 bg-gradient-to-br from-indigo-400 to-purple-500 absolute top-0 w-full"></div>
             
-            <!-- 關閉按鈕 -->
+            <!-- 左上角：刪除圖案按鈕 -->
+            <button id="deleteEntityBtn" class="absolute top-4 left-4 bg-rose-500/80 hover:bg-rose-600 backdrop-blur text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10 shadow-md" title="刪除此圖案">
+                🗑️
+            </button>
+
+            <!-- 右上角：關閉按鈕 -->
             <button id="closeModalBtn" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10">
                 ✕
             </button>
@@ -261,18 +266,27 @@
         const navDrawBtn = document.getElementById('navDrawBtn');
         const navZooBtn = document.getElementById('navZooBtn');
 
-        function switchMode(mode) {
+        function switchMode(mode, bypassPassword = false) {
+            // 從 View 1 轉至 View 2 需輸入密碼檢查
+            if (mode === 'zoo' && currentMode === 'draw' && !bypassPassword) {
+                const pwd = prompt("請輸入密碼以進入動物園大廳：");
+                if (pwd !== '122333') {
+                    if (pwd !== null) alert("密碼錯誤！");
+                    return; // 密碼錯誤則中止切換
+                }
+            }
+
             currentMode = mode;
             if (mode === 'draw') {
                 viewDraw.classList.remove('hidden'); viewZoo.classList.add('hidden');
-                // 按鈕樣式 (啟用狀態)
-                navDrawBtn.className = "flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all bg-white shadow-sm text-indigo-600";
-                navZooBtn.className = "flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all text-slate-500 hover:text-slate-800";
+                // 按鈕樣式 (縮小版)
+                navDrawBtn.className = "flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all bg-white shadow-sm text-indigo-600";
+                navZooBtn.className = "flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all text-slate-500 hover:text-slate-800";
             } else {
                 viewZoo.classList.remove('hidden'); viewDraw.classList.add('hidden');
-                // 按鈕樣式 (啟用狀態)
-                navZooBtn.className = "flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all bg-white shadow-sm text-teal-600";
-                navDrawBtn.className = "flex-1 py-2 px-4 rounded-full text-sm font-bold transition-all text-slate-500 hover:text-slate-800";
+                // 按鈕樣式 (縮小版)
+                navZooBtn.className = "flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all bg-white shadow-sm text-teal-600";
+                navDrawBtn.className = "flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all text-slate-500 hover:text-slate-800";
             }
         }
 
@@ -481,8 +495,8 @@
                 setTimeout(() => {
                     overlay.style.display = 'none';
                     document.getElementById('resetBtn').click();
-                    // 創造成功後，自動切換到動物園模式看看牠！
-                    switchMode('zoo');
+                    // 創造成功後，自動切換到動物園模式看看牠！ (繞過密碼檢查)
+                    switchMode('zoo', true);
                 }, 2000);
 
             } catch (error) {
@@ -520,19 +534,35 @@
         const modalName = document.getElementById('modalName');
         const modalPersonality = document.getElementById('modalPersonality');
         const modalQuote = document.getElementById('modalQuote');
+        let currentSelectedKey = null; // 記錄當前選取要查看的名片 key
 
         function closeCharacterCard() { 
             modalOverlay.style.display = 'none'; 
             isZooPaused = false; 
+            currentSelectedKey = null;
         }
         
         document.getElementById('closeModalBtn').addEventListener('click', closeCharacterCard);
         modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeCharacterCard(); });
 
+        // 個別刪除按鈕邏輯
+        document.getElementById('deleteEntityBtn').addEventListener('click', async () => {
+            if (!currentSelectedKey) return;
+            if (confirm("確定要刪除這個圖案嗎？此動作無法復原。")) {
+                try {
+                    await remove(ref(db, `drawings/${currentSelectedKey}`));
+                    closeCharacterCard();
+                } catch (err) {
+                    alert("刪除失敗：" + err.message);
+                }
+            }
+        });
+
         function openCharacterCard(key, transparentImage) {
             const character = zooRegistry[key];
             if(!character) return;
             isZooPaused = true; // 暫停動畫
+            currentSelectedKey = key; // 更新當前選取的 key
             
             modalImg.src = transparentImage;
             modalName.innerText = character.aiName;
