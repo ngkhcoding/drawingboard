@@ -73,6 +73,52 @@
             filter: drop-shadow(0 0 30px rgba(255,255,255,0.9)) drop-shadow(0 15px 25px rgba(0,0,0,0.3)) !important;
             transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 1.5s !important;
         }
+
+        /* 聚光燈自我介紹對話框 */
+        .speech-bubble {
+            position: absolute;
+            z-index: 101;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            border: 2px solid #6366f1;
+            border-radius: 1rem;
+            padding: 0.75rem 1.25rem;
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+            font-weight: 800;
+            color: #4f46e5;
+            pointer-events: none;
+            opacity: 0;
+            text-align: center;
+            max-width: 280px;
+            animation: fadeInOutBubble 8s ease-in-out forwards;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: #6366f1 transparent transparent transparent;
+        }
+        .speech-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: -7px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px 8px 0;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+            z-index: 1;
+        }
+        @keyframes fadeInOutBubble {
+            0% { opacity: 0; transform: translate(-50%, 20px) scale(0.8); }
+            5% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            95% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -20px) scale(0.8); }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen w-screen overflow-hidden flex flex-col relative">
@@ -400,7 +446,7 @@
                         content: [
                             {
                                 type: "text",
-                                text: "這是一張簡單的線條塗鴉。請發揮創意辨識它像什麼，並為這個角色賦予靈魂。回傳純 JSON 格式，必須包含以下 key：'name'(有趣繁體中文名), 'personality'(一句話形容性格), 'quote'(專屬經典台詞)。不要有 Markdown 標記。"
+                                text: "這是一張簡單的線條塗鴉。請發揮創意辨識它像什麼，並為這個角色賦予靈魂。回傳純 JSON 格式，必須包含以下 key：'name'(有趣繁體中文名), 'personality'(一句話形容性格), 'likes'(最喜歡的事物或活動), 'quote'(專屬經典台詞)。不要有 Markdown 標記。"
                             },
                             {
                                 type: "image_url",
@@ -476,6 +522,7 @@
                     image: imageData, 
                     aiName: aiSoul.name || "神祕生物", 
                     aiPersonality: aiSoul.personality || "未知", 
+                    aiLikes: aiSoul.likes || "發呆",
                     aiQuote: aiSoul.quote || "...", 
                     timestamp: Date.now()
                 };
@@ -601,13 +648,24 @@
                     isResting = true;
                     imgEl.classList.add('spotlight-entity');
                     
-                    // 8 秒後解除放大狀態並開始漂浮
+                    // 新增：自我介紹對話框
+                    const likesText = data.aiLikes || data.aiPersonality || "發呆"; // 相容舊資料
+                    const bubble = document.createElement('div');
+                    bubble.className = 'speech-bubble';
+                    bubble.innerText = `「我是${data.aiName}，最喜歡${likesText}！」`;
+                    bubble.style.left = '50%';
+                    bubble.style.top = 'calc(50% - 150px)'; // 位於圖片上方
+                    bubble.style.transform = 'translateX(-50%)';
+                    zooContainer.appendChild(bubble);
+                    
+                    // 8 秒後解除放大狀態並開始漂浮、移除對話框
                     setTimeout(() => {
                         const artIndex = artworks.findIndex(a => a.key === firebaseKey);
                         if(artIndex !== -1) {
                             artworks[artIndex].isResting = false;
                             imgEl.classList.remove('spotlight-entity');
                         }
+                        if (bubble.parentNode) bubble.remove();
                     }, 8000);
                 } else {
                     // 原本就存在的圖案：一開始就賦予隨機位置
@@ -615,14 +673,15 @@
                     startY = Math.random() * (window.innerHeight - 180) + 20;
                 }
 
-                // 賦予柔和的飄浮速度
+                // 賦予更緩慢、柔和的飄浮速度
                 const artData = {
                     key: firebaseKey,
                     element: imgEl,
                     x: startX,
                     y: startY,
-                    dx: (Math.random() * 0.8 + 0.2) * (Math.random() > 0.5 ? 1 : -1),
-                    dy: (Math.random() * 0.8 + 0.2) * (Math.random() > 0.5 ? 1 : -1),
+                    // 將原本的 0.8 + 0.2 降低為 0.3 + 0.1 讓速度變慢
+                    dx: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
+                    dy: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
                     isResting: isResting
                 };
                 artworks.push(artData);
