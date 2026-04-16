@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>✨ AI 塗鴉動物園 ✨</title>
+    <title>🏫 SWCSSS 智啟展示廳</title>
     <!-- 引入 Tailwind CSS 進行現代化排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Google Fonts (Nunito) 增加可愛圓潤感 -->
+    <!-- 引入 Google Fonts (Nunito) 增加科技圓潤感 -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Nunito', sans-serif; overscroll-behavior: none; }
@@ -27,7 +27,7 @@
 
         /* 漸層文字特效 */
         .text-gradient {
-            background: linear-gradient(135deg, #6366f1, #d946ef, #f43f5e);
+            background: linear-gradient(135deg, #4f46e5, #0ea5e9, #10b981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -80,12 +80,12 @@
             z-index: 101;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(4px);
-            border: 2px solid #6366f1;
+            border: 2px solid #4f46e5;
             border-radius: 1rem;
             padding: 0.75rem 1.25rem;
-            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);
             font-weight: 800;
-            color: #4f46e5;
+            color: #4338ca;
             pointer-events: none;
             opacity: 0;
             text-align: center;
@@ -100,7 +100,7 @@
             transform: translateX(-50%);
             border-width: 10px 10px 0;
             border-style: solid;
-            border-color: #6366f1 transparent transparent transparent;
+            border-color: #4f46e5 transparent transparent transparent;
         }
         .speech-bubble::before {
             content: '';
@@ -126,24 +126,29 @@
     <!-- 🌟 全域導覽列 (模式切換) -->
     <nav class="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 glass-panel rounded-full shadow-lg p-1 flex gap-1 w-[70%] max-w-[200px]">
         <button id="navDrawBtn" class="flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all bg-white shadow-sm text-indigo-600">
-            🎨 繪圖
+            🎨 設計
         </button>
         <button id="navZooBtn" class="flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all text-slate-500 hover:text-slate-800">
-            🏞️ 大廳
+            🏫 SWCSSS
         </button>
     </nav>
 
     <!-- ==========================================
-         VIEW 1: 🎨 繪圖工作室
+         VIEW 1: 🎨 機械人設計工坊
          ========================================== -->
-    <main id="viewDraw" class="absolute inset-0 flex flex-col items-center justify-center p-4 bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 h-full w-full overflow-y-auto pt-24 pb-10 transition-opacity duration-300">
-        
-        <div class="glass-panel w-full max-w-md rounded-3xl shadow-2xl p-6 flex flex-col items-center">
-            <h1 class="text-3xl font-black mb-2 text-gradient">創造新生命</h1>
-            <p class="text-slate-500 text-sm mb-6 font-semibold">畫出你的專屬怪物，AI 將賦予牠靈魂！</p>
+    <main id="viewDraw" class="flex-1 w-full max-w-md mx-auto flex flex-col items-center justify-center p-4 relative z-10 h-full overflow-y-auto pt-20 pb-10">
+        <div class="glass-panel p-6 rounded-[2rem] shadow-2xl w-full text-center relative overflow-hidden">
+            <!-- 標題區 -->
+            <div class="mb-4 relative z-10">
+                <h1 class="text-3xl font-black mb-1 text-indigo-900 tracking-tight drop-shadow-sm">智啟設計工坊 <span class="text-2xl">🤖</span></h1>
+                <p class="text-slate-600 font-medium leading-relaxed text-sm">
+                    『語』您同行，智啟明天<br>
+                    <span class="text-xs text-indigo-500">請繪製並啟動您的專屬智能機械人</span>
+                </p>
+            </div>
             
             <!-- 畫布容器 -->
-            <div class="w-full aspect-square bg-white rounded-2xl shadow-inner border-4 border-indigo-100 overflow-hidden relative mb-6">
+            <div class="w-full aspect-square bg-white rounded-2xl shadow-inner border-4 border-indigo-100 overflow-hidden relative mb-4">
                 <canvas id="drawCanvas" width="400" height="400" class="w-full h-full cursor-crosshair"></canvas>
             </div>
             
@@ -163,46 +168,48 @@
 
             <!-- 工具按鈕 -->
             <div class="flex gap-3 w-full mb-4">
-                <button id="undoBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
-                    <span class="text-xl">↩️</span> 復原
+                <button id="undoBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <span class="text-lg">↩️</span> 復原
                 </button>
-                <button id="resetBtn" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-600 py-3 rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
-                    <span class="text-xl">🗑️</span> 重置
+                <button id="resetBtn" class="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-600 py-2.5 rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
+                    <span class="text-lg">🗑️</span> 重置
                 </button>
             </div>
             
             <!-- AI 角色分析說明 -->
-            <div class="w-full bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-4 text-left shadow-sm">
+            <div class="w-full bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-4 text-left shadow-sm">
                 <h3 class="text-indigo-800 font-bold text-sm mb-1 flex items-center gap-1">
-                    <span>✨</span> AI 角色分析
+                    <span>✨</span> AI 智能分析
                 </h3>
                 <p class="text-indigo-600/80 text-xs leading-relaxed font-semibold">
-                    當您按下「傳送」時，系統會將畫作發送給 AI 辨識您的塗鴉，並為它命名、賦予性格，甚至寫下一句專屬對話。
+                    當您按下「啟動」時，系統會將設計圖發送給 AI。AI 會辨識您的塗鴉，為這台機械人命名、設定核心功能，並寫下一句專屬對話。
                 </p>
             </div>
 
             <!-- 傳送按鈕 (漸層大按鈕) -->
-            <button id="sendBtn" class="w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white py-4 rounded-xl font-black text-lg shadow-lg shadow-purple-200 transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-2">
-                ✨ 賦予靈魂並傳送 ✨
+            <button id="sendBtn" class="w-full bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-500 hover:from-indigo-600 hover:via-sky-600 hover:to-emerald-600 text-white py-3.5 rounded-xl font-black text-lg shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-2">
+                ⚡ 啟動機械人並傳送 ⚡
             </button>
         </div>
     </main>
 
     <!-- ==========================================
-         VIEW 2: 🏞️ AI 動物園大廳
+         VIEW 2: 🏫 SWCSSS 智啟展示廳
          ========================================== -->
-    <main id="viewZoo" class="absolute inset-0 bg-gradient-to-br from-emerald-100 via-teal-50 to-cyan-100 hidden h-full w-full overflow-hidden transition-opacity duration-300">
-        <!-- 裝飾背景文字 -->
-        <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
-            <h1 class="text-[10rem] font-black tracking-tighter">ZOO</h1>
+    <main id="viewZoo" class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 hidden h-full w-full overflow-hidden transition-opacity duration-300">
+        <!-- 背景裝飾 -->
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none opacity-20 select-none z-0 flex flex-col items-center">
+            <span class="text-[120px]">🏫</span>
+            <h2 class="text-5xl font-black text-slate-400 mt-4 tracking-widest">SWCSSS</h2>
+            <p class="text-2xl font-bold text-slate-400 mt-2">『語』您同行，智啟明天</p>
         </div>
 
-        <!-- 浮動生命體的容器 (由 JS 動態加入) -->
-        <div id="zooContainer" class="absolute inset-0 w-full h-full"></div>
+        <!-- 浮動生命體的容器 -->
+        <div id="zooContainer" class="absolute inset-0 w-full h-full z-10"></div>
 
-        <!-- 全域重置按鈕 (放置於左下角) -->
-        <button id="globalResetBtn" class="absolute bottom-6 left-6 glass-panel border-rose-200 text-rose-600 hover:bg-rose-50 px-6 py-3 rounded-full font-bold shadow-lg transition-all flex items-center gap-2 z-50">
-            🧹 清空大廳
+        <!-- 左下角：全域清空按鈕 -->
+        <button id="globalResetBtn" class="absolute bottom-6 left-6 glass-panel border-rose-200 text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-full font-bold shadow-lg transition-all flex items-center gap-2 z-50 text-sm">
+            ⚠️ 清空展示廳
         </button>
     </main>
 
@@ -213,8 +220,8 @@
     <!-- ✨ 處理中遮罩 -->
     <div id="processingOverlay" class="fixed inset-0 bg-indigo-900/80 backdrop-blur-md z-[100] hidden flex-col items-center justify-center text-white transition-opacity">
         <div class="magic-spinner mb-6"></div>
-        <h2 id="aiStatusTitle" class="text-2xl font-black mb-2 text-center animate-pulse">正在連結靈魂網路...</h2>
-        <p id="aiStatusDesc" class="text-indigo-200 text-center max-w-xs font-semibold">AI 正在仔細觀察你的塗鴉</p>
+        <h2 id="aiStatusTitle" class="text-2xl font-black mb-2 text-center animate-pulse">系統連線中...</h2>
+        <p id="aiStatusDesc" class="text-indigo-200 text-center max-w-xs font-semibold">正在分析設計圖的智能模組...</p>
     </div>
 
     <!-- ✨ 角色名片彈窗 (Trading Card Style) -->
@@ -222,7 +229,7 @@
         <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl relative overflow-hidden animate-pop">
             
             <!-- 卡片頂部裝飾背景 -->
-            <div class="h-32 bg-gradient-to-br from-indigo-400 to-purple-500 absolute top-0 w-full"></div>
+            <div class="h-32 bg-gradient-to-br from-indigo-400 to-sky-500 absolute top-0 w-full"></div>
             
             <!-- 左上角：刪除圖案按鈕 -->
             <button id="deleteEntityBtn" class="absolute top-4 left-4 bg-rose-500/80 hover:bg-rose-600 backdrop-blur text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10 shadow-md" title="刪除此圖案">
@@ -244,21 +251,21 @@
 
                 <!-- AI 生成資訊 -->
                 <div class="text-center w-full">
-                    <div class="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-xs font-black rounded-full mb-2 tracking-wide uppercase">
-                        AI 創造的新物種
+                    <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-black rounded-full mb-2 tracking-wide uppercase">
+                        SWCSSS 智能機械人
                     </div>
-                    <h2 id="modalName" class="text-3xl font-black text-slate-800 mb-2">角色名字</h2>
+                    <h2 id="modalName" class="text-3xl font-black text-slate-800 mb-2">機械人名字</h2>
                     
                     <div class="bg-slate-50 rounded-2xl p-4 mb-4 mt-2 border border-slate-100">
                         <p id="modalPersonality" class="text-slate-600 font-semibold text-sm leading-relaxed">
-                            性格描述
+                            核心功能描述
                         </p>
                     </div>
 
                     <div class="relative">
                         <span class="text-4xl text-indigo-200 absolute -top-4 -left-2 font-serif">"</span>
-                        <p id="modalQuote" class="text-lg font-bold text-indigo-600 italic px-6 relative z-10">
-                            經典台詞經典台詞經典台詞
+                        <p id="modalQuote" class="text-lg font-bold text-sky-600 italic px-6 relative z-10">
+                            經典對白
                         </p>
                         <span class="text-4xl text-indigo-200 absolute -bottom-8 -right-2 font-serif">"</span>
                     </div>
@@ -278,7 +285,7 @@
         // 1. 環境變數與初始化
         // ==========================================
         
-        // Firebase 設定 (使用你的專案)
+        // Firebase 設定
         const firebaseConfig = {
             apiKey: "AIzaSyCxceo3lq2CNXtYBUQBsoc00NO800o1Xk4",
             authDomain: "project-7577690681598110536.firebaseapp.com",
@@ -293,16 +300,17 @@
         const db = getDatabase(app);
         const drawingsRef = ref(db, 'drawings');
 
-        // ⚠️ 請在此填入你的智譜 AI API Key
+        // GLM AI API 設定
         const apiKey = "e2bf1f2b563e43789f2ef97c3fc51f65.R0QpxNoSojQSMVGT"; 
         const GLM_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 
         // 全域狀態
-        let currentMode = 'draw'; // 'draw' 或 'zoo'
+        let currentMode = 'draw'; 
         const zooRegistry = {}; 
         let artworks = []; 
         let isZooPaused = false;
-        const pageLoadTime = Date.now(); // 紀錄頁面載入時間，用來判斷是否為「新加入」的圖案
+        const pageLoadTime = Date.now(); 
+        let currentSelectedKey = null;
 
         // ==========================================
         // 2. UI 導覽切換邏輯
@@ -313,16 +321,13 @@
         const navZooBtn = document.getElementById('navZooBtn');
 
         function switchMode(mode) {
-            // 已移除進入大廳的密碼檢查
             currentMode = mode;
             if (mode === 'draw') {
                 viewDraw.classList.remove('hidden'); viewZoo.classList.add('hidden');
-                // 按鈕樣式 (縮小版)
                 navDrawBtn.className = "flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all bg-white shadow-sm text-indigo-600";
                 navZooBtn.className = "flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all text-slate-500 hover:text-slate-800";
             } else {
                 viewZoo.classList.remove('hidden'); viewDraw.classList.add('hidden');
-                // 按鈕樣式 (縮小版)
                 navZooBtn.className = "flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all bg-white shadow-sm text-teal-600";
                 navDrawBtn.className = "flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all text-slate-500 hover:text-slate-800";
             }
@@ -343,22 +348,19 @@
         ctx.lineWidth = 8; 
         ctx.lineCap = 'round'; 
         ctx.lineJoin = 'round';
-        ctx.strokeStyle = '#1e293b'; // 深岩灰色，預設顏色
+        ctx.strokeStyle = '#1e293b'; // 預設深灰色
 
         // 顏色選擇邏輯
         const colorBtns = document.querySelectorAll('#colorPalette button');
         colorBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                // 清除所有按鈕的選取狀態
                 colorBtns.forEach(b => { 
                     b.classList.remove('ring-2', 'ring-indigo-500'); 
                     b.classList.add('ring-transparent'); 
                 });
-                // 設定目前選取的按鈕
                 const target = e.currentTarget;
                 target.classList.remove('ring-transparent');
                 target.classList.add('ring-2', 'ring-indigo-500');
-                // 更改畫筆顏色
                 ctx.strokeStyle = target.dataset.color;
             });
         });
@@ -368,7 +370,6 @@
             if (historyPushStack.length > 30) historyPushStack.shift();
         }
         
-        // 初始透明狀態
         saveHistory(); 
 
         function getCanvasCoordinates(e) {
@@ -410,7 +411,6 @@
         window.addEventListener('touchend', stopDrawing);
         window.addEventListener('touchcancel', stopDrawing);
 
-        // 復原與重置
         document.getElementById('undoBtn').addEventListener('click', () => {
             if (historyPushStack.length > 1) {
                 historyPushStack.pop(); 
@@ -424,7 +424,7 @@
         });
 
         // ==========================================
-        // 4. Gemini AI 核心邏輯
+        // 4. GLM AI 核心邏輯
         // ==========================================
         const overlay = document.getElementById('processingOverlay');
         const statusTitle = document.getElementById('aiStatusTitle');
@@ -437,31 +437,27 @@
         }
 
         async function analyzeImageWithAI(base64Image) {
-            // GLM 需要完整的 base64 URL (包含 data:image/png;base64, 前綴)
             const payload = {
-                model: "glm-4.1v-thinking-flash", // 切換為指定的 glm-4.1v-thinking-flash 思考視覺模型
+                model: "glm-4.1v-thinking-flash", 
                 messages: [
                     {
                         role: "user",
                         content: [
                             {
                                 type: "text",
-                                text: "這是一張簡單的線條塗鴉。請發揮創意辨識它像什麼，並為這個角色賦予靈魂。回傳純 JSON 格式，必須包含以下 key：'name'(有趣繁體中文名), 'personality'(一句話形容性格), 'likes'(最喜歡的事物或活動), 'quote'(專屬經典台詞)。不要有 Markdown 標記。"
+                                text: "這是一張由學生繪製的簡單線條塗鴉。請發揮創意辨識它像一個什麼樣的機械人，並配合新會商會中學「『語』您同行，智啟明天」的主題，為這個機械人賦予靈魂。回傳純 JSON 格式，必須包含以下 key：'name'(有趣繁體中文機械人名字), 'personality'(一句話形容它的智能或性格), 'likes'(最喜歡執行什麼任務或事物), 'quote'(專屬經典台詞)。不要有 Markdown 標記。"
                             },
                             {
                                 type: "image_url",
-                                image_url: {
-                                    url: base64Image
-                                }
+                                image_url: { url: base64Image }
                             }
                         ]
                     }
                 ]
             };
 
-            setOverlayStatus("AI 正在觀察...", "思考這優美的線條代表什麼生命體");
+            setOverlayStatus("AI 正在啟動...", "分析這張草圖能成為什麼樣的機械人");
 
-            // 實作自動重試機制 (Exponential Backoff) 以提高穩定性
             let retries = 5;
             let delay = 1000;
             
@@ -471,7 +467,7 @@
                         method: 'POST',
                         headers: { 
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}` // 智譜 API 使用 Bearer Token 驗證
+                            'Authorization': `Bearer ${apiKey}`
                         },
                         body: JSON.stringify(payload)
                     });
@@ -479,15 +475,12 @@
                     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                     
                     const data = await response.json();
-                    
-                    // GLM 的回應格式提取
                     let aiTextResponse = data.choices?.[0]?.message?.content;
                     if(!aiTextResponse) throw new Error("AI 回應格式錯誤");
 
-                    // 嘗試清理可能存在的 Markdown JSON 標記
                     aiTextResponse = aiTextResponse.replace(/```json/g, '').replace(/```/g, '').trim();
                     
-                    setOverlayStatus("靈魂合成中！", "正在準備角色的專屬名片...");
+                    setOverlayStatus("核心模組建立中！", "正在準備機械人的專屬名片...");
                     return JSON.parse(aiTextResponse);
 
                 } catch (error) {
@@ -501,14 +494,13 @@
         }
 
         document.getElementById('sendBtn').addEventListener('click', async () => {
-            if(historyPushStack.length <= 1) { alert("請先在畫布上創作喔！"); return; }
+            if(historyPushStack.length <= 1) { alert("請先在畫布上設計您的機械人喔！"); return; }
 
             overlay.style.display = 'flex';
             setTimeout(()=> overlay.classList.remove('opacity-0'), 10);
-            setOverlayStatus("正在連結網路...", "啟動 AI 賦靈儀式");
+            setOverlayStatus("系統連線中...", "正在分析設計圖的智能模組...");
 
             try {
-                // 為圖片加上白色背景再轉出，因為 AI 看透明背景可能會出現黑邊問題
                 const tempCanvas = document.createElement('canvas');
                 tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
                 const tempCtx = tempCanvas.getContext('2d');
@@ -520,33 +512,32 @@
                 
                 const finalPayload = {
                     image: imageData, 
-                    aiName: aiSoul.name || "神祕生物", 
-                    aiPersonality: aiSoul.personality || "未知", 
-                    aiLikes: aiSoul.likes || "發呆",
-                    aiQuote: aiSoul.quote || "...", 
+                    aiName: aiSoul.name || "神祕機械人", 
+                    aiPersonality: aiSoul.personality || "未知功能", 
+                    aiLikes: aiSoul.likes || "充電",
+                    aiQuote: aiSoul.quote || "系統啟動中...", 
                     timestamp: Date.now()
                 };
 
-                setOverlayStatus("創造成功！", `你的「${finalPayload.aiName}」已經誕生！`, false);
+                setOverlayStatus("啟動成功！", `您的「${finalPayload.aiName}」已正式上線！`, false);
 
                 await push(drawingsRef, finalPayload);
 
                 setTimeout(() => {
                     overlay.style.display = 'none';
                     document.getElementById('resetBtn').click();
-                    // 創造成功後，自動切換到動物園模式看看牠！
                     switchMode('zoo');
                 }, 2000);
 
             } catch (error) {
                 console.error(error);
-                setOverlayStatus("儀式失敗", "API 連結出錯，請稍後重試 😢", false);
+                setOverlayStatus("啟動失敗", "API 連結出錯，請稍後重試 😢", false);
                 setTimeout(() => { overlay.style.display = 'none'; }, 3000);
             }
         });
 
         // ==========================================
-        // 5. 動物園大廳邏輯 (展示與互動)
+        // 5. 展示廳大廳邏輯 (展示與互動)
         // ==========================================
         const zooContainer = document.getElementById('zooContainer');
 
@@ -559,7 +550,6 @@
                 const imgData = tCtx.getImageData(0, 0, tCanvas.width, tCanvas.height); 
                 const data = imgData.data;
                 for (let i = 0; i < data.length; i += 4) { 
-                    // 去除相近白色
                     if (data[i] > 230 && data[i+1] > 230 && data[i+2] > 230) { data[i+3] = 0; } 
                 }
                 tCtx.putImageData(imgData, 0, 0); 
@@ -573,7 +563,6 @@
         const modalName = document.getElementById('modalName');
         const modalPersonality = document.getElementById('modalPersonality');
         const modalQuote = document.getElementById('modalQuote');
-        let currentSelectedKey = null; // 記錄當前選取要查看的名片 key
 
         function closeCharacterCard() { 
             modalOverlay.style.display = 'none'; 
@@ -584,17 +573,14 @@
         document.getElementById('closeModalBtn').addEventListener('click', closeCharacterCard);
         modalOverlay.addEventListener('click', (e) => { if(e.target === modalOverlay) closeCharacterCard(); });
 
-        // 個別刪除按鈕邏輯
+        // 個別刪除
         document.getElementById('deleteEntityBtn').addEventListener('click', async () => {
             if (!currentSelectedKey) return;
-            
-            // 新增：個別刪除密碼驗證
             const pwd = prompt("請輸入密碼以刪除此圖案：");
             if (pwd !== '122333') {
                 if (pwd !== null) alert("密碼錯誤！");
                 return;
             }
-
             if (confirm("確定要刪除這個圖案嗎？此動作無法復原。")) {
                 try {
                     await remove(ref(db, `drawings/${currentSelectedKey}`));
@@ -608,8 +594,8 @@
         function openCharacterCard(key, transparentImage) {
             const character = zooRegistry[key];
             if(!character) return;
-            isZooPaused = true; // 暫停動畫
-            currentSelectedKey = key; // 更新當前選取的 key
+            isZooPaused = true; 
+            currentSelectedKey = key;
             
             modalImg.src = transparentImage;
             modalName.innerText = character.aiName;
@@ -637,28 +623,25 @@
                 
                 zooContainer.appendChild(imgEl);
 
-                // 判斷是否為新加入的圖案
                 const isNewItem = data.timestamp > pageLoadTime;
                 let startX, startY, isResting = false;
 
                 if (isNewItem) {
-                    // 新加入的圖案：放在正中間並放大
+                    // 新圖案聚光燈特效
                     startX = (window.innerWidth / 2) - 70;
                     startY = (window.innerHeight / 2) - 70;
                     isResting = true;
                     imgEl.classList.add('spotlight-entity');
                     
-                    // 新增：自我介紹對話框
-                    const likesText = data.aiLikes || data.aiPersonality || "發呆"; // 相容舊資料
+                    const likesText = data.aiLikes || "處理數據"; 
                     const bubble = document.createElement('div');
                     bubble.className = 'speech-bubble';
                     bubble.innerText = `「我是${data.aiName}，最喜歡${likesText}！」`;
                     bubble.style.left = '50%';
-                    bubble.style.top = 'calc(50% - 150px)'; // 位於圖片上方
+                    bubble.style.top = 'calc(50% - 150px)';
                     bubble.style.transform = 'translateX(-50%)';
                     zooContainer.appendChild(bubble);
                     
-                    // 8 秒後解除放大狀態並開始漂浮、移除對話框
                     setTimeout(() => {
                         const artIndex = artworks.findIndex(a => a.key === firebaseKey);
                         if(artIndex !== -1) {
@@ -668,18 +651,16 @@
                         if (bubble.parentNode) bubble.remove();
                     }, 8000);
                 } else {
-                    // 原本就存在的圖案：一開始就賦予隨機位置
                     startX = Math.random() * (window.innerWidth - 180) + 20;
                     startY = Math.random() * (window.innerHeight - 180) + 20;
                 }
 
-                // 賦予更緩慢、柔和的飄浮速度
+                // 緩慢移動速度
                 const artData = {
                     key: firebaseKey,
                     element: imgEl,
                     x: startX,
                     y: startY,
-                    // 將原本的 0.8 + 0.2 降低為 0.3 + 0.1 讓速度變慢
                     dx: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
                     dy: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
                     isResting: isResting
@@ -693,14 +674,15 @@
             const firebaseKey = snapshot.key;
             const imgEl = document.getElementById('img_' + firebaseKey);
             if(imgEl) {
-                // 加入淡出動畫再移除
                 imgEl.style.opacity = '0';
                 imgEl.style.transform = 'scale(0)';
                 setTimeout(() => imgEl.remove(), 300);
             }
             artworks = artworks.filter(art => art.key !== firebaseKey);
             delete zooRegistry[firebaseKey];
-            if(modalOverlay.style.display === 'flex') closeCharacterCard();
+            if(modalOverlay.style.display === 'flex' && currentSelectedKey === firebaseKey) {
+                closeCharacterCard();
+            }
         });
 
         // 核心動畫迴圈
@@ -710,12 +692,11 @@
                 const h = window.innerHeight;
                 artworks.forEach((art) => {
                     if (art.isResting) {
-                        // 如果在聚光燈休息狀態，強制保持在畫面正中間（即使視窗縮放）
                         art.x = (window.innerWidth / 2) - 70;
                         art.y = (window.innerHeight / 2) - 70;
                         art.element.style.left = art.x + 'px'; 
                         art.element.style.top = art.y + 'px';
-                        return; // 提早返回，跳過漂浮更新
+                        return; 
                     }
 
                     if (art.x + 140 >= w || art.x <= 0) art.dx = -art.dx;
@@ -731,16 +712,15 @@
 
         // 全域清空
         document.getElementById('globalResetBtn').addEventListener('click', () => {
-            if(Object.keys(zooRegistry).length === 0) { alert("大廳目前已經是空的了喔！"); return; }
+            if(Object.keys(zooRegistry).length === 0) { alert("展示廳目前已經是空的了喔！"); return; }
             
-            // 新增：清空大廳密碼驗證
-            const pwd = prompt("請輸入密碼以清空大廳：");
+            const pwd = prompt("請輸入密碼以清空展示廳：");
             if (pwd !== '122333') {
                 if (pwd !== null) alert("密碼錯誤！");
                 return;
             }
 
-            if(confirm("確定要將所有生命體放生，清空動物園嗎？")) { 
+            if(confirm("確定要將所有機械人關機，清空 SWCSSS 展示廳嗎？")) { 
                 remove(drawingsRef); 
             }
         });
