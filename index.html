@@ -90,34 +90,36 @@
             opacity: 0;
             text-align: center;
             max-width: 280px;
-            animation: fadeInOutBubble 8s ease-in-out forwards;
+            animation: fadeInOutBubble 12s ease-in-out forwards; /* 延長動畫時間至 12s */
         }
+        
+        /* 調整對話框箭頭位置，使其朝上 */
         .speech-bubble::after {
             content: '';
             position: absolute;
-            bottom: -10px;
+            top: -10px; /* 改為 top */
             left: 50%;
             transform: translateX(-50%);
-            border-width: 10px 10px 0;
+            border-width: 0 10px 10px 10px; /* 調整邊框寬度 */
             border-style: solid;
-            border-color: #4f46e5 transparent transparent transparent;
+            border-color: transparent transparent #4f46e5 transparent; /* 調整邊框顏色 */
         }
         .speech-bubble::before {
             content: '';
             position: absolute;
-            bottom: -7px;
+            top: -7px; /* 改為 top */
             left: 50%;
             transform: translateX(-50%);
-            border-width: 8px 8px 0;
+            border-width: 0 8px 8px 8px; /* 調整邊框寬度 */
             border-style: solid;
-            border-color: white transparent transparent transparent;
+            border-color: transparent transparent white transparent; /* 調整邊框顏色 */
             z-index: 1;
         }
         @keyframes fadeInOutBubble {
-            0% { opacity: 0; transform: translate(-50%, 20px) scale(0.8); }
+            0% { opacity: 0; transform: translate(-50%, -20px) scale(0.8); } /* 調整初始動畫位置 */
             5% { opacity: 1; transform: translate(-50%, 0) scale(1); }
             95% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -20px) scale(0.8); }
+            100% { opacity: 0; transform: translate(-50%, 20px) scale(0.8); } /* 調整結束動畫位置 */
         }
     </style>
 </head>
@@ -612,33 +614,47 @@
             zooRegistry[firebaseKey] = data;
 
             removeWhiteBackground(data.image, (transparentImageData) => {
+                // 1. 建立外層容器 (負責 XY 座標移動)
+                const wrapperEl = document.createElement('div');
+                wrapperEl.className = 'moving-wrapper';
+                wrapperEl.id = 'wrapper_' + firebaseKey;
+
+                // 2. 建立內層圖案 (負責動作動畫)
                 const imgEl = document.createElement('img');
                 imgEl.src = transparentImageData;
-                imgEl.className = 'moving-entity';
-                imgEl.id = 'img_' + firebaseKey;
                 
-                imgEl.addEventListener('click', () => {
+                wrapperEl.appendChild(imgEl);
+                
+                wrapperEl.addEventListener('click', () => {
                     openCharacterCard(firebaseKey, transparentImageData);
                 });
                 
-                zooContainer.appendChild(imgEl);
+                zooContainer.appendChild(wrapperEl);
 
                 const isNewItem = data.timestamp > pageLoadTime;
                 let startX, startY, isResting = false;
+
+                // 隨機移動速度
+                let initDx = (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1);
+                let initDy = (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1);
+
+                // 設定初始方向與預設走路動畫
+                const initialFacing = initDx > 0 ? 'facing-right' : 'facing-left';
+                imgEl.className = 'sprite anim-walk ' + initialFacing;
 
                 if (isNewItem) {
                     // 新圖案聚光燈特效
                     startX = (window.innerWidth / 2) - 70;
                     startY = (window.innerHeight / 2) - 70;
                     isResting = true;
-                    imgEl.classList.add('spotlight-entity');
+                    wrapperEl.classList.add('spotlight-entity');
                     
                     const likesText = data.aiLikes || "處理數據"; 
                     const bubble = document.createElement('div');
                     bubble.className = 'speech-bubble';
                     bubble.innerText = `「我是${data.aiName}，最喜歡${likesText}！」`;
                     bubble.style.left = '50%';
-                    bubble.style.top = 'calc(50% - 150px)';
+                    bubble.style.top = 'calc(50% + 150px)'; /* 移至圖案下方 */
                     bubble.style.transform = 'translateX(-50%)';
                     zooContainer.appendChild(bubble);
                     
@@ -646,24 +662,27 @@
                         const artIndex = artworks.findIndex(a => a.key === firebaseKey);
                         if(artIndex !== -1) {
                             artworks[artIndex].isResting = false;
-                            imgEl.classList.remove('spotlight-entity');
+                            wrapperEl.classList.remove('spotlight-entity');
                         }
                         if (bubble.parentNode) bubble.remove();
-                    }, 8000);
+                    }, 12000); /* 延長停留時間至 12s */
                 } else {
                     startX = Math.random() * (window.innerWidth - 180) + 20;
                     startY = Math.random() * (window.innerHeight - 180) + 20;
                 }
 
-                // 緩慢移動速度
+                // 將容器與精靈紀錄到狀態陣列中
                 const artData = {
                     key: firebaseKey,
-                    element: imgEl,
+                    wrapper: wrapperEl,
+                    sprite: imgEl,
                     x: startX,
                     y: startY,
-                    dx: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
-                    dy: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
-                    isResting: isResting
+                    dx: initDx,
+                    dy: initDy,
+                    isResting: isResting,
+                    state: 'walk', // 預設狀態：走路
+                    stateTimer: Math.floor(Math.random() * 200 + 100) // 狀態維持的畫格數
                 };
                 artworks.push(artData);
             });
@@ -672,11 +691,12 @@
         // Firebase 監聽刪除
         onChildRemoved(drawingsRef, (snapshot) => {
             const firebaseKey = snapshot.key;
-            const imgEl = document.getElementById('img_' + firebaseKey);
-            if(imgEl) {
-                imgEl.style.opacity = '0';
-                imgEl.style.transform = 'scale(0)';
-                setTimeout(() => imgEl.remove(), 300);
+            // 改為移除 wrapper 外層
+            const wrapperEl = document.getElementById('wrapper_' + firebaseKey);
+            if(wrapperEl) {
+                wrapperEl.style.opacity = '0';
+                wrapperEl.style.transform = 'scale(0)';
+                setTimeout(() => wrapperEl.remove(), 300);
             }
             artworks = artworks.filter(art => art.key !== firebaseKey);
             delete zooRegistry[firebaseKey];
@@ -685,25 +705,67 @@
             }
         });
 
-        // 核心動畫迴圈
+        // 核心動畫與 AI 狀態機迴圈
         function animateZoo() {
             if (!isZooPaused && currentMode === 'zoo') {
                 const w = window.innerWidth;
                 const h = window.innerHeight;
+                
                 artworks.forEach((art) => {
                     if (art.isResting) {
                         art.x = (window.innerWidth / 2) - 70;
                         art.y = (window.innerHeight / 2) - 70;
-                        art.element.style.left = art.x + 'px'; 
-                        art.element.style.top = art.y + 'px';
+                        art.wrapper.style.left = art.x + 'px'; 
+                        art.wrapper.style.top = art.y + 'px';
                         return; 
                     }
 
-                    if (art.x + 140 >= w || art.x <= 0) art.dx = -art.dx;
-                    if (art.y + 140 >= h || art.y <= 0) art.dy = -art.dy;
-                    art.x += art.dx; art.y += art.dy;
-                    art.element.style.left = art.x + 'px'; 
-                    art.element.style.top = art.y + 'px';
+                    // --- 🧠 狀態機邏輯：AI 決定現在要做什麼動作 ---
+                    art.stateTimer--;
+                    if (art.stateTimer <= 0) {
+                        const rand = Math.random();
+                        const facingClass = art.dx > 0 ? 'facing-right' : 'facing-left';
+
+                        if (rand < 0.7) {
+                            // 70% 機率：繼續走路
+                            art.state = 'walk';
+                            art.sprite.className = 'sprite anim-walk ' + facingClass;
+                            art.stateTimer = Math.floor(Math.random() * 300 + 200); // 走 3~8 秒
+                        } else if (rand < 0.85) {
+                            // 15% 機率：停下來打招呼
+                            art.state = 'wave';
+                            art.sprite.className = 'sprite anim-wave ' + facingClass;
+                            art.stateTimer = 90; // 動畫長度約 1.5 秒 (90 幀)
+                        } else {
+                            // 15% 機率：停下來鞠躬
+                            art.state = 'bow';
+                            art.sprite.className = 'sprite anim-bow ' + facingClass;
+                            art.stateTimer = 90; // 動畫長度約 1.5 秒
+                        }
+                    }
+
+                    // --- 🚶 移動邏輯：只有在「走路狀態」才前進 ---
+                    if (art.state === 'walk') {
+                        if (art.x + 140 >= w || art.x <= 0) {
+                            art.dx = -art.dx; // 碰到左右邊緣反轉速度
+                            
+                            // 處理轉身方向視覺
+                            if (art.dx > 0) {
+                                art.sprite.classList.remove('facing-left');
+                                art.sprite.classList.add('facing-right');
+                            } else {
+                                art.sprite.classList.remove('facing-right');
+                                art.sprite.classList.add('facing-left');
+                            }
+                        }
+                        if (art.y + 140 >= h || art.y <= 0) art.dy = -art.dy;
+                        
+                        art.x += art.dx; 
+                        art.y += art.dy;
+                    }
+
+                    art.wrapper.style.left = art.x + 'px'; 
+                    art.wrapper.style.top = art.y + 'px';
                 });
             }
             requestAnimationFrame(animateZoo);
