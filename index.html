@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🏫 SWCSSS 智啟展示廳</title>
-    <!-- 引入 Tailwind CSS 進行現代化排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 引入 Google Fonts (Nunito) 增加科技圓潤感 -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Nunito', sans-serif; overscroll-behavior: none; }
@@ -32,20 +30,57 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* 動態漂浮圖片 */
-        .moving-entity {
+        /* --- ✨ 動態漂浮容器 (負責 X,Y 移動) --- */
+        .moving-wrapper {
             position: absolute;
             width: 140px;
             height: 140px;
             cursor: pointer;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s;
-            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
             z-index: 5;
+            transition: filter 0.3s, opacity 0.3s, transform 0.3s;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15));
         }
-        .moving-entity:hover {
-            transform: scale(1.15) rotate(-5deg);
+        .moving-wrapper:hover {
             filter: drop-shadow(0 15px 25px rgba(0,0,0,0.3));
             z-index: 10;
+        }
+        .moving-wrapper:hover .sprite {
+            transform: scale(1.15) rotate(-5deg) scaleX(var(--facing, 1));
+        }
+
+        /* --- ✨ 角色精靈圖案與方向 (負責動畫與轉身) --- */
+        .sprite {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            --facing: 1; /* 1 向右, -1 向左 */
+            transform: scaleX(var(--facing));
+            transition: transform 0.3s ease; /* 讓轉身平滑 */
+        }
+        .facing-left { --facing: -1; }
+        .facing-right { --facing: 1; }
+
+        /* --- ✨ 狀態動畫：走路 (雙腳搖擺) --- */
+        .anim-walk { animation: walkCycle 0.8s infinite alternate ease-in-out; }
+        @keyframes walkCycle {
+            0% { transform: scaleX(var(--facing)) translateY(0px) rotate(0deg); }
+            50% { transform: scaleX(var(--facing)) translateY(-8px) rotate(6deg); }
+            100% { transform: scaleX(var(--facing)) translateY(0px) rotate(-6deg); }
+        }
+
+        /* --- ✨ 狀態動畫：打招呼 (左右揮動) --- */
+        .anim-wave { animation: waveAction 1.5s ease-in-out; }
+        @keyframes waveAction {
+            0%, 100% { transform: scaleX(var(--facing)) rotate(0deg); }
+            20%, 60% { transform: scaleX(var(--facing)) rotate(25deg); }
+            40%, 80% { transform: scaleX(var(--facing)) rotate(-15deg); }
+        }
+
+        /* --- ✨ 狀態動畫：鞠躬 (向前傾倒) --- */
+        .anim-bow { animation: bowAction 1.5s ease-in-out; }
+        @keyframes bowAction {
+            0%, 100% { transform: scaleX(var(--facing)) rotate(0deg) translateY(0); }
+            40%, 60% { transform: scaleX(var(--facing)) rotate(20deg) translateY(12px) scaleY(0.85); }
         }
 
         /* 讀取中動畫 */
@@ -74,7 +109,7 @@
             transition: transform 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 1.5s !important;
         }
 
-        /* 聚光燈自我介紹對話框 */
+        /* 聚光燈自我介紹對話框 (12秒，顯示在下方) */
         .speech-bubble {
             position: absolute;
             z-index: 101;
@@ -90,40 +125,41 @@
             opacity: 0;
             text-align: center;
             max-width: 280px;
-            animation: fadeInOutBubble 8s ease-in-out forwards;
+            animation: fadeInOutBubble 12s ease-in-out forwards;
         }
+        
+        /* 對話框箭頭調整為朝上 */
         .speech-bubble::after {
             content: '';
             position: absolute;
-            bottom: -10px;
+            top: -10px; 
             left: 50%;
             transform: translateX(-50%);
-            border-width: 10px 10px 0;
+            border-width: 0 10px 10px 10px; 
             border-style: solid;
-            border-color: #4f46e5 transparent transparent transparent;
+            border-color: transparent transparent #4f46e5 transparent; 
         }
         .speech-bubble::before {
             content: '';
             position: absolute;
-            bottom: -7px;
+            top: -7px; 
             left: 50%;
             transform: translateX(-50%);
-            border-width: 8px 8px 0;
+            border-width: 0 8px 8px 8px; 
             border-style: solid;
-            border-color: white transparent transparent transparent;
+            border-color: transparent transparent white transparent; 
             z-index: 1;
         }
         @keyframes fadeInOutBubble {
-            0% { opacity: 0; transform: translate(-50%, 20px) scale(0.8); }
+            0% { opacity: 0; transform: translate(-50%, -20px) scale(0.8); }
             5% { opacity: 1; transform: translate(-50%, 0) scale(1); }
             95% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-            100% { opacity: 0; transform: translate(-50%, -20px) scale(0.8); }
+            100% { opacity: 0; transform: translate(-50%, 20px) scale(0.8); }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 h-screen w-screen overflow-hidden flex flex-col relative">
 
-    <!-- 🌟 全域導覽列 (模式切換) -->
     <nav class="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 glass-panel rounded-full shadow-lg p-1 flex gap-1 w-[70%] max-w-[200px]">
         <button id="navDrawBtn" class="flex-1 py-1.5 px-3 rounded-full text-xs font-bold transition-all bg-white shadow-sm text-indigo-600">
             🎨 設計
@@ -133,12 +169,8 @@
         </button>
     </nav>
 
-    <!-- ==========================================
-         VIEW 1: 🎨 機械人設計工坊
-         ========================================== -->
     <main id="viewDraw" class="absolute inset-0 w-full max-w-md mx-auto flex flex-col items-center p-4 z-10 overflow-y-auto pt-20 pb-10">
         <div class="glass-panel p-6 rounded-[2rem] shadow-2xl w-full text-center relative shrink-0 my-auto">
-            <!-- 標題區 -->
             <div class="mb-4 relative z-10">
                 <h1 class="text-3xl font-black mb-1 text-indigo-900 tracking-tight drop-shadow-sm">智啟設計工坊 <span class="text-2xl">🤖</span></h1>
                 <p class="text-slate-600 font-medium leading-relaxed text-sm">
@@ -147,26 +179,18 @@
                 </p>
             </div>
             
-            <!-- 畫布容器 -->
             <div class="w-full aspect-square bg-white rounded-2xl shadow-inner border-4 border-indigo-100 overflow-hidden relative mb-4">
                 <canvas id="drawCanvas" width="400" height="400" class="w-full h-full cursor-crosshair"></canvas>
             </div>
             
-            <!-- 顏色選擇器 -->
             <div class="flex gap-3 w-full mb-4 justify-center" id="colorPalette">
-                <!-- 預設黑色 -->
                 <button class="w-10 h-10 rounded-full border-[3px] border-white ring-2 ring-indigo-500 shadow-md transition-transform hover:scale-110" style="background-color: #1e293b;" data-color="#1e293b"></button>
-                <!-- 紅色 -->
                 <button class="w-10 h-10 rounded-full border-[3px] border-white ring-0 ring-transparent shadow-md transition-transform hover:scale-110" style="background-color: #ef4444;" data-color="#ef4444"></button>
-                <!-- 藍色 -->
                 <button class="w-10 h-10 rounded-full border-[3px] border-white ring-0 ring-transparent shadow-md transition-transform hover:scale-110" style="background-color: #3b82f6;" data-color="#3b82f6"></button>
-                <!-- 綠色 -->
                 <button class="w-10 h-10 rounded-full border-[3px] border-white ring-0 ring-transparent shadow-md transition-transform hover:scale-110" style="background-color: #22c55e;" data-color="#22c55e"></button>
-                <!-- 橘黃色 -->
                 <button class="w-10 h-10 rounded-full border-[3px] border-white ring-0 ring-transparent shadow-md transition-transform hover:scale-110" style="background-color: #f59e0b;" data-color="#f59e0b"></button>
             </div>
 
-            <!-- 工具按鈕 -->
             <div class="flex gap-3 w-full mb-4">
                 <button id="undoBtn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center gap-2">
                     <span class="text-lg">↩️</span> 復原
@@ -176,7 +200,6 @@
                 </button>
             </div>
             
-            <!-- AI 角色分析說明 -->
             <div class="w-full bg-indigo-50 border border-indigo-100 rounded-xl p-3 mb-4 text-left shadow-sm">
                 <h3 class="text-indigo-800 font-bold text-sm mb-1 flex items-center gap-1">
                     <span>✨</span> AI 智能分析
@@ -186,70 +209,52 @@
                 </p>
             </div>
 
-            <!-- 傳送按鈕 (漸層大按鈕) -->
             <button id="sendBtn" class="w-full bg-gradient-to-r from-indigo-500 via-sky-500 to-emerald-500 hover:from-indigo-600 hover:via-sky-600 hover:to-emerald-600 text-white py-3.5 rounded-xl font-black text-lg shadow-lg shadow-blue-200 transition-all transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center gap-2">
                 ⚡ 啟動機械人並傳送 ⚡
             </button>
         </div>
     </main>
 
-    <!-- ==========================================
-         VIEW 2: 🏫 SWCSSS 智啟展示廳
-         ========================================== -->
     <main id="viewZoo" class="absolute inset-0 bg-gradient-to-br from-indigo-50 via-sky-50 to-emerald-50 hidden h-full w-full overflow-hidden transition-opacity duration-300">
-        <!-- 背景裝飾 -->
         <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full text-center pointer-events-none opacity-20 select-none z-0 flex flex-col items-center">
             <span class="text-[120px]">🏫</span>
             <h2 class="text-5xl font-black text-slate-400 mt-4 tracking-widest">SWCSSS</h2>
             <p class="text-2xl font-bold text-slate-400 mt-2">『語』您同行，智啟明天</p>
         </div>
 
-        <!-- 浮動生命體的容器 -->
         <div id="zooContainer" class="absolute inset-0 w-full h-full z-10"></div>
 
-        <!-- 左下角：全域清空按鈕 -->
         <button id="globalResetBtn" class="absolute bottom-6 left-6 glass-panel border-rose-200 text-rose-600 hover:bg-rose-50 px-4 py-2 rounded-full font-bold shadow-lg transition-all flex items-center gap-2 z-50 text-sm">
             ⚠️ 清空展示廳
         </button>
     </main>
 
-    <!-- ==========================================
-         Overlays & Modals
-         ========================================== -->
-    
-    <!-- ✨ 處理中遮罩 -->
     <div id="processingOverlay" class="fixed inset-0 bg-indigo-900/80 backdrop-blur-md z-[100] hidden flex-col items-center justify-center text-white transition-opacity">
         <div class="magic-spinner mb-6"></div>
         <h2 id="aiStatusTitle" class="text-2xl font-black mb-2 text-center animate-pulse">系統連線中...</h2>
         <p id="aiStatusDesc" class="text-indigo-200 text-center max-w-xs font-semibold">正在分析設計圖的智能模組...</p>
     </div>
 
-    <!-- ✨ 角色名片彈窗 (Trading Card Style) -->
     <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] hidden items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-[2rem] shadow-2xl relative overflow-hidden animate-pop">
             
-            <!-- 卡片頂部裝飾背景 -->
             <div class="h-32 bg-gradient-to-br from-indigo-400 to-sky-500 absolute top-0 w-full"></div>
             
-            <!-- 左上角：刪除圖案按鈕 -->
             <button id="deleteEntityBtn" class="absolute top-4 left-4 bg-rose-500/80 hover:bg-rose-600 backdrop-blur text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10 shadow-md" title="刪除此圖案">
                 🗑️
             </button>
 
-            <!-- 右上角：關閉按鈕 -->
             <button id="closeModalBtn" class="absolute top-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors z-10">
                 ✕
             </button>
 
             <div class="relative pt-16 px-6 pb-8 flex flex-col items-center">
-                <!-- 頭像框 -->
                 <div class="w-32 h-32 bg-white rounded-3xl shadow-xl p-2 mb-4 relative z-10 transform rotate-3">
                     <div class="w-full h-full rounded-2xl border-2 border-dashed border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden">
                         <img src="" id="modalImg" class="w-[120%] h-[120%] object-contain" alt="Character">
                     </div>
                 </div>
 
-                <!-- AI 生成資訊 -->
                 <div class="text-center w-full">
                     <div class="inline-block px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-black rounded-full mb-2 tracking-wide uppercase">
                         SWCSSS 智能機械人
@@ -274,9 +279,6 @@
         </div>
     </div>
 
-    <!-- ==========================================
-         JavaScript 邏輯
-         ========================================== -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
         import { getDatabase, ref, push, onChildAdded, remove, onChildRemoved } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
@@ -612,33 +614,47 @@
             zooRegistry[firebaseKey] = data;
 
             removeWhiteBackground(data.image, (transparentImageData) => {
+                // 1. 建立外層容器 (負責 XY 移動)
+                const wrapperEl = document.createElement('div');
+                wrapperEl.className = 'moving-wrapper';
+                wrapperEl.id = 'wrapper_' + firebaseKey;
+
+                // 2. 建立內層圖案 (負責動作動畫)
                 const imgEl = document.createElement('img');
                 imgEl.src = transparentImageData;
-                imgEl.className = 'moving-entity';
-                imgEl.id = 'img_' + firebaseKey;
                 
-                imgEl.addEventListener('click', () => {
+                wrapperEl.appendChild(imgEl);
+                
+                wrapperEl.addEventListener('click', () => {
                     openCharacterCard(firebaseKey, transparentImageData);
                 });
                 
-                zooContainer.appendChild(imgEl);
+                zooContainer.appendChild(wrapperEl);
 
                 const isNewItem = data.timestamp > pageLoadTime;
                 let startX, startY, isResting = false;
+
+                // 隨機移動速度 (稍微調高一點避免卡死，但依然緩慢優雅)
+                let initDx = (Math.random() * 0.5 + 0.2) * (Math.random() > 0.5 ? 1 : -1);
+                let initDy = (Math.random() * 0.5 + 0.2) * (Math.random() > 0.5 ? 1 : -1);
+
+                // 設定初始方向與預設走路動畫
+                const initialFacing = initDx > 0 ? 'facing-right' : 'facing-left';
+                imgEl.className = 'sprite anim-walk ' + initialFacing;
 
                 if (isNewItem) {
                     // 新圖案聚光燈特效
                     startX = (window.innerWidth / 2) - 70;
                     startY = (window.innerHeight / 2) - 70;
                     isResting = true;
-                    imgEl.classList.add('spotlight-entity');
+                    wrapperEl.classList.add('spotlight-entity');
                     
                     const likesText = data.aiLikes || "處理數據"; 
                     const bubble = document.createElement('div');
                     bubble.className = 'speech-bubble';
                     bubble.innerText = `「我是${data.aiName}，最喜歡${likesText}！」`;
                     bubble.style.left = '50%';
-                    bubble.style.top = 'calc(50% - 150px)';
+                    bubble.style.top = 'calc(50% + 150px)'; /* 對話框移至圖案下方 */
                     bubble.style.transform = 'translateX(-50%)';
                     zooContainer.appendChild(bubble);
                     
@@ -646,24 +662,27 @@
                         const artIndex = artworks.findIndex(a => a.key === firebaseKey);
                         if(artIndex !== -1) {
                             artworks[artIndex].isResting = false;
-                            imgEl.classList.remove('spotlight-entity');
+                            wrapperEl.classList.remove('spotlight-entity');
                         }
                         if (bubble.parentNode) bubble.remove();
-                    }, 8000);
+                    }, 12000); /* 延長停留時間至 12s */
                 } else {
                     startX = Math.random() * (window.innerWidth - 180) + 20;
                     startY = Math.random() * (window.innerHeight - 180) + 20;
                 }
 
-                // 緩慢移動速度
+                // 記錄至狀態陣列
                 const artData = {
                     key: firebaseKey,
-                    element: imgEl,
+                    wrapper: wrapperEl,
+                    sprite: imgEl,
                     x: startX,
                     y: startY,
-                    dx: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
-                    dy: (Math.random() * 0.3 + 0.1) * (Math.random() > 0.5 ? 1 : -1),
-                    isResting: isResting
+                    dx: initDx,
+                    dy: initDy,
+                    isResting: isResting,
+                    state: 'walk', // 預設狀態：走路
+                    stateTimer: Math.floor(Math.random() * 200 + 100) // 狀態維持的畫格數
                 };
                 artworks.push(artData);
             });
@@ -672,11 +691,12 @@
         // Firebase 監聽刪除
         onChildRemoved(drawingsRef, (snapshot) => {
             const firebaseKey = snapshot.key;
-            const imgEl = document.getElementById('img_' + firebaseKey);
-            if(imgEl) {
-                imgEl.style.opacity = '0';
-                imgEl.style.transform = 'scale(0)';
-                setTimeout(() => imgEl.remove(), 300);
+            // 移除 wrapper 外層
+            const wrapperEl = document.getElementById('wrapper_' + firebaseKey);
+            if(wrapperEl) {
+                wrapperEl.style.opacity = '0';
+                wrapperEl.style.transform = 'scale(0)';
+                setTimeout(() => wrapperEl.remove(), 300);
             }
             artworks = artworks.filter(art => art.key !== firebaseKey);
             delete zooRegistry[firebaseKey];
@@ -694,16 +714,65 @@
                     if (art.isResting) {
                         art.x = (window.innerWidth / 2) - 70;
                         art.y = (window.innerHeight / 2) - 70;
-                        art.element.style.left = art.x + 'px'; 
-                        art.element.style.top = art.y + 'px';
+                        art.wrapper.style.left = art.x + 'px'; 
+                        art.wrapper.style.top = art.y + 'px';
                         return; 
                     }
 
-                    if (art.x + 140 >= w || art.x <= 0) art.dx = -art.dx;
-                    if (art.y + 140 >= h || art.y <= 0) art.dy = -art.dy;
-                    art.x += art.dx; art.y += art.dy;
-                    art.element.style.left = art.x + 'px'; 
-                    art.element.style.top = art.y + 'px';
+                    // --- 🧠 狀態機邏輯：AI 決定現在要做什麼動作 ---
+                    art.stateTimer--;
+                    if (art.stateTimer <= 0) {
+                        const rand = Math.random();
+                        const facingClass = art.dx > 0 ? 'facing-right' : 'facing-left';
+
+                        if (rand < 0.7) {
+                            // 70% 機率：繼續走路
+                            art.state = 'walk';
+                            art.sprite.className = 'sprite anim-walk ' + facingClass;
+                            art.stateTimer = Math.floor(Math.random() * 300 + 200); 
+                        } else if (rand < 0.85) {
+                            // 15% 機率：停下來打招呼
+                            art.state = 'wave';
+                            art.sprite.className = 'sprite anim-wave ' + facingClass;
+                            art.stateTimer = 90; 
+                        } else {
+                            // 15% 機率：停下來鞠躬
+                            art.state = 'bow';
+                            art.sprite.className = 'sprite anim-bow ' + facingClass;
+                            art.stateTimer = 90; 
+                        }
+                    }
+
+                    // --- 🚶 移動邏輯：只有在「走路狀態」才前進 ---
+                    if (art.state === 'walk') {
+                        // 邊界防卡死邏輯：強制設定方向而不是單純反轉
+                        if (art.x + 140 >= w) {
+                            art.dx = -Math.abs(art.dx);
+                        } else if (art.x <= 0) {
+                            art.dx = Math.abs(art.dx);
+                        }
+                        
+                        if (art.y + 140 >= h) {
+                            art.dy = -Math.abs(art.dy);
+                        } else if (art.y <= 0) {
+                            art.dy = Math.abs(art.dy);
+                        }
+
+                        // 處理轉身方向視覺
+                        if (art.dx > 0) {
+                            art.sprite.classList.remove('facing-left');
+                            art.sprite.classList.add('facing-right');
+                        } else {
+                            art.sprite.classList.remove('facing-right');
+                            art.sprite.classList.add('facing-left');
+                        }
+                        
+                        art.x += art.dx; 
+                        art.y += art.dy;
+                    }
+
+                    art.wrapper.style.left = art.x + 'px'; 
+                    art.wrapper.style.top = art.y + 'px';
                 });
             }
             requestAnimationFrame(animateZoo);
