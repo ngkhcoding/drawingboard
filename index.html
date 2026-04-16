@@ -138,7 +138,42 @@
             max-width: 280px;
             animation: fadeInOutBubble 12s ease-in-out forwards;
         }
-        
+        /* --- ✨ 碰撞打招呼對話框 --- */
+        .greeting-bubble {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #10b981; /* 綠寶石色 */
+            color: #059669;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 800;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 20;
+            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);
+            animation: popFade 2.5s forwards;
+        }
+        .greeting-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 6px 6px 0;
+            border-style: solid;
+            border-color: #10b981 transparent transparent transparent;
+        }
+        @keyframes popFade {
+            0% { opacity: 0; transform: translate(-50%, 10px) scale(0.8); }
+            10% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            90% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -10px) scale(0.8); }
+        }
         /* 對話框箭頭調整為朝上 */
         .speech-bubble::after {
             content: '';
@@ -728,71 +763,131 @@
         });
 
         // 核心動畫迴圈
+// 顯示打招呼泡泡的函數
+        function showGreeting(art) {
+            const now = Date.now();
+            // 避免短時間內重複瘋狂打招呼 (冷卻時間 3.5 秒)
+            if (!art.lastGreetingTime || now - art.lastGreetingTime > 3500) {
+                art.lastGreetingTime = now;
+                const bubble = document.createElement('div');
+                bubble.className = 'greeting-bubble';
+                bubble.innerText = '你好！';
+                art.wrapper.appendChild(bubble);
+                setTimeout(() => {
+                    if (bubble.parentNode) bubble.remove();
+                }, 2500);
+            }
+        }
+
+        // 核心動畫迴圈 (結合物理碰撞引擎)
         function animateZoo() {
             if (!isZooPaused && currentMode === 'zoo') {
                 const w = window.innerWidth;
                 const h = window.innerHeight;
+                
+                // --- 1. 狀態更新與邊界移動 ---
                 artworks.forEach((art) => {
                     if (art.isResting) {
-                        art.x = (window.innerWidth / 2) - 70;
-                        art.y = (window.innerHeight / 2) - 70;
-                        art.wrapper.style.left = art.x + 'px'; 
-                        art.wrapper.style.top = art.y + 'px';
+                        art.x = (w / 2) - 70;
+                        art.y = (h / 2) - 70;
                         return; 
                     }
 
-                    // --- 🧠 狀態機邏輯：AI 決定現在要做什麼動作 ---
+                    // 🧠 狀態機邏輯
                     art.stateTimer--;
                     if (art.stateTimer <= 0) {
                         const rand = Math.random();
                         const facingClass = art.dx > 0 ? 'facing-right' : 'facing-left';
 
                         if (rand < 0.7) {
-                            // 70% 機率：繼續走路
                             art.state = 'walk';
                             art.sprite.className = 'sprite anim-walk ' + facingClass;
                             art.stateTimer = Math.floor(Math.random() * 300 + 200); 
                         } else if (rand < 0.85) {
-                            // 15% 機率：停下來打招呼
                             art.state = 'wave';
                             art.sprite.className = 'sprite anim-wave ' + facingClass;
                             art.stateTimer = 90; 
                         } else {
-                            // 15% 機率：停下來鞠躬
                             art.state = 'bow';
                             art.sprite.className = 'sprite anim-bow ' + facingClass;
                             art.stateTimer = 90; 
                         }
                     }
 
-                    // --- 🚶 移動邏輯：只有在「走路狀態」才前進 ---
+                    // 🚶 移動與邊界反彈
                     if (art.state === 'walk') {
-                        // 邊界防卡死邏輯：強制設定方向而不是單純反轉
-                        if (art.x + 140 >= w) {
-                            art.dx = -Math.abs(art.dx);
-                        } else if (art.x <= 0) {
-                            art.dx = Math.abs(art.dx);
-                        }
+                        if (art.x + 140 >= w) art.dx = -Math.abs(art.dx);
+                        else if (art.x <= 0) art.dx = Math.abs(art.dx);
                         
-                        if (art.y + 140 >= h) {
-                            art.dy = -Math.abs(art.dy);
-                        } else if (art.y <= 0) {
-                            art.dy = Math.abs(art.dy);
-                        }
-
-                        // 處理轉身方向視覺
-                        if (art.dx > 0) {
-                            art.sprite.classList.remove('facing-left');
-                            art.sprite.classList.add('facing-right');
-                        } else {
-                            art.sprite.classList.remove('facing-right');
-                            art.sprite.classList.add('facing-left');
-                        }
+                        if (art.y + 140 >= h) art.dy = -Math.abs(art.dy);
+                        else if (art.y <= 0) art.dy = Math.abs(art.dy);
                         
                         art.x += art.dx; 
                         art.y += art.dy;
                     }
+                });
 
+                // --- 2. 角色間碰撞偵測 (防重疊與打招呼) ---
+                for (let i = 0; i < artworks.length; i++) {
+                    for (let j = i + 1; j < artworks.length; j++) {
+                        const artA = artworks[i];
+                        const artB = artworks[j];
+
+                        // 如果其中一個還在聚光燈下，不參與碰撞
+                        if (artA.isResting || artB.isResting) continue;
+
+                        // 計算兩者中心點的距離
+                        const centerX_A = artA.x + 70;
+                        const centerY_A = artA.y + 70;
+                        const centerX_B = artB.x + 70;
+                        const centerY_B = artB.y + 70;
+
+                        const dx = centerX_B - centerX_A;
+                        const dy = centerY_B - centerY_A;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        // 碰撞半徑 (140 是完全不重疊邊緣，設 110 讓畫面看起來剛好碰到身體)
+                        const minDistance = 110; 
+
+                        if (distance < minDistance && distance > 0) {
+                            // (a) 強制互相推開 (防止重疊黏在一起)
+                            const overlap = minDistance - distance;
+                            const nx = dx / distance;
+                            const ny = dy / distance;
+
+                            artA.x -= nx * overlap / 2;
+                            artA.y -= ny * overlap / 2;
+                            artB.x += nx * overlap / 2;
+                            artB.y += ny * overlap / 2;
+
+                            // (b) 交換移動速度 (物理彈性碰撞反彈)
+                            const tempDx = artA.dx;
+                            const tempDy = artA.dy;
+                            artA.dx = artB.dx;
+                            artA.dy = artB.dy;
+                            artB.dx = tempDx;
+                            artB.dy = tempDy;
+
+                            // (c) 觸發打招呼對白
+                            showGreeting(artA);
+                            showGreeting(artB);
+                        }
+                    }
+                }
+
+                // --- 3. 渲染到畫面與更新方向 ---
+                artworks.forEach((art) => {
+                    // 根據碰撞反彈後的新速度，動態更新面朝方向
+                    if (!art.isResting) {
+                        if (art.dx > 0) {
+                            art.sprite.classList.remove('facing-left');
+                            art.sprite.classList.add('facing-right');
+                        } else if (art.dx < 0) {
+                            art.sprite.classList.remove('facing-right');
+                            art.sprite.classList.add('facing-left');
+                        }
+                    }
+                    
                     art.wrapper.style.left = art.x + 'px'; 
                     art.wrapper.style.top = art.y + 'px';
                 });
