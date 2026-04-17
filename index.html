@@ -18,7 +18,7 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
-        /* --- 聚光燈特效 (已減輕) --- */
+        /* --- 聚光燈特效 --- */
         #zooContainer::before {
             content: '';
             position: absolute;
@@ -232,22 +232,37 @@
             if (pwd === '122333') { if (confirm("確定清空？")) remove(drawingsRef); }
         };
 
+        // --- ✨ 完美褪底邏輯更新 ---
         document.getElementById('sendBtn').onclick = async () => {
             const overlay = document.getElementById('processingOverlay');
             overlay.style.display = 'flex';
             try {
-                const imgData = canvas.toDataURL('image/png');
+                // 1. 給資料庫的圖片：直接取得 Canvas，保留原本完美的透明邊緣 (去背效果最佳)
+                const imageDataForDB = canvas.toDataURL('image/png');
+
+                // 2. 給 AI 辨識的圖片：在底層墊上白紙，避免 AI 看到全黑背景無法辨識
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width; tempCanvas.height = canvas.height;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.fillStyle = 'white';
+                tempCtx.fillRect(0,0,tempCanvas.width,tempCanvas.height);
+                tempCtx.drawImage(canvas, 0, 0);
+                const imageDataForAI = tempCanvas.toDataURL('image/png');
+
                 const response = await fetch(GLM_API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
                     body: JSON.stringify({
                         model: "glm-4.1v-thinking-flash",
-                        messages: [{ role: "user", content: [{ type: "text", text: "辨識圖中角色，回傳 JSON: name, personality, quote"}, { type: "image_url", image_url: { url: imgData }}]}]
+                        messages: [{ role: "user", content: [{ type: "text", text: "辨識圖中角色，回傳 JSON: name, personality, quote"}, { type: "image_url", image_url: { url: imageDataForAI }}]}]
                     })
                 });
                 const resData = await response.json();
                 const aiSoul = JSON.parse(resData.choices[0].message.content.replace(/```json|```/g, ''));
-                await push(drawingsRef, { image: imgData, ...aiSoul, timestamp: Date.now() });
+                
+                // 儲存的是透明版圖片 imageDataForDB
+                await push(drawingsRef, { image: imageDataForDB, ...aiSoul, timestamp: Date.now() });
+                
                 overlay.style.display = 'none';
                 switchMode('zoo');
                 ctx.clearRect(0,0,400,400);
@@ -268,7 +283,10 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'moving-wrapper';
             const img = document.createElement('img');
-            img.src = data.image; img.className = 'sprite anim-walk';
+            
+            // --- ✨ 直接使用透明圖，不需要再執行 removeWhiteBackground 扣邊 ---
+            img.src = data.image; 
+            img.className = 'sprite anim-walk';
             wrapper.appendChild(img);
             document.getElementById('zooContainer').appendChild(wrapper);
 
