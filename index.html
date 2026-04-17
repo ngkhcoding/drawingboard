@@ -18,7 +18,7 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
-        /* --- 聚光燈特效 --- */
+        /* --- 聚光燈特效 (已減輕) --- */
         #zooContainer::before {
             content: '';
             position: absolute;
@@ -51,6 +51,7 @@
         .facing-left { --facing: -1; }
         .facing-right { --facing: 1; }
 
+        /* --- 走路動畫 --- */
         .anim-walk { animation: walkCycle 1.2s infinite alternate ease-in-out; }
         @keyframes walkCycle {
             0% { transform: scaleX(var(--facing)) translateY(0px) rotate(0deg); }
@@ -83,6 +84,7 @@
             100% { opacity: 0; transform: translate(-50%, -10px) scale(0.8); }
         }
 
+        /* 登場聚焦特效 */
         .spotlight-entity {
             transform: scale(2.2) !important;
             z-index: 100 !important;
@@ -108,7 +110,7 @@
 
     <main id="viewDraw" class="absolute inset-0 w-full max-w-md mx-auto flex flex-col items-center p-4 z-10 overflow-y-auto pt-20 pb-10">
         <div class="glass-panel p-6 rounded-[2rem] shadow-2xl w-full text-center relative shrink-0 my-auto">
-            <h1 class="text-3xl font-black mb-1 text-indigo-900">智啟設計工房 🤖</h1>
+            <h1 class="text-3xl font-black mb-1 text-indigo-900">AI智啟設計工房 🤖</h1>
             <p class="text-slate-600 font-medium text-sm mb-4">『語』您同行，『智』啟明天</p>
             
             <div class="w-full aspect-square bg-white rounded-2xl shadow-inner border-4 border-indigo-100 overflow-hidden relative mb-4">
@@ -188,7 +190,7 @@
         let activeSpotlights = 0;
         const pageLoadTime = Date.now();
 
-        // 畫布邏輯
+        // 畫布
         const canvas = document.getElementById('drawCanvas');
         const ctx = canvas.getContext('2d');
         let isDrawing = false;
@@ -226,15 +228,8 @@
         document.getElementById('navZooBtn').onclick = () => switchMode('zoo');
 
         document.getElementById('globalResetBtn').onclick = () => {
-            const pwd = prompt("請輸入密碼以清空展示廳：");
-            if (pwd === '122333') {
-                if (confirm("⚠️ 確定要刪除所有機械人嗎？")) {
-                    remove(drawingsRef);
-                    alert("展示廳已清空。");
-                }
-            } else if (pwd !== null) {
-                alert("密碼錯誤！");
-            }
+            const pwd = prompt("密碼：");
+            if (pwd === '122333') { if (confirm("確定清空？")) remove(drawingsRef); }
         };
 
         document.getElementById('sendBtn').onclick = async () => {
@@ -315,8 +310,7 @@
         });
 
         document.getElementById('closeModalBtn').onclick = () => { 
-            document.getElementById('modalOverlay').style.display = 'none'; 
-            isZooPaused = false; 
+            document.getElementById('modalOverlay').style.display = 'none'; isZooPaused = false; 
         };
 
         function animate() {
